@@ -3,161 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>옷짓는 고양이 - 재고 관리</title>
+    <title>옷짓는 고양이</title>
     <style>
-        /* 1. 디자인: 아이보리 비단 배경 & 먹색 스티치 */
+        :root {
+            --ivory-silk: #F5F5DC;
+            --ink-black: #2C2C2C;
+            --card-bg: #FDFDF5;
+        }
+
         body {
-            background-color: #F5F5DC; /* 아이보리 색상 */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            background-color: var(--ivory-silk);
             margin: 0;
-            font-family: 'Pretendard', sans-serif;
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            color: var(--ink-black);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-bottom: 100px; /* 하단 버튼 공간 */
         }
 
-        .dashboard {
-            background-color: #FDFDF5; /* 비단 느낌의 연한 아이보리 */
+        /* 먹색 스티치 테두리 (화면 전체 가이드) */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 5px; left: 5px; right: 5px; bottom: 5px;
+            border: 2px dashed var(--ink-black);
+            stroke-dasharray: 20, 15; /* 길게 늘린 스티치 */
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .header {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        /* 상단 요약 카드 (웃는 고양이 스타일) */
+        .summary-card {
+            background: linear-gradient(135deg, #f3e5ab 0%, #e7d696 100%); /* 비단 광택 느낌 */
             width: 90%;
-            max-width: 800px;
-            padding: 40px;
+            max-width: 400px;
+            padding: 30px;
+            border-radius: 30px;
+            color: var(--ink-black);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
             position: relative;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            border-radius: 5px;
+            overflow: hidden;
         }
 
-        /* 먹색(먹박) 스티치 테두리 */
-        .dashboard::before {
+        .summary-card::after {
             content: '';
             position: absolute;
-            top: 4px; /* 약 1~2mm 안쪽 */
-            left: 4px;
-            right: 4px;
-            bottom: 4px;
-            border: 2px dashed #2C2C2C; /* 먹색 실 */
-            pointer-events: none;
-            /* 땀 길이를 길게 설정 (15px 실, 10px 공백) */
-            stroke-dasharray: 15, 10; 
-            border-radius: 3px;
+            top: -20px; right: -20px;
+            width: 100px; height: 100px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
         }
 
-        h1 { color: #2C2C2C; text-align: center; margin-bottom: 30px; font-weight: 300; }
+        .total-amount { font-size: 28px; font-weight: bold; margin: 10px 0; }
 
-        /* 2. 입력 영역 */
-        .input-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            z-index: 1;
-            position: relative;
-        }
-
-        input {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid #D1D1C1;
-            background: rgba(255,255,255,0.5);
-            border-radius: 4px;
-        }
-
-        button {
-            padding: 12px 20px;
-            background-color: #2C2C2C;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 4px;
-        }
-
-        button:hover { background-color: #444; }
-
-        /* 3. 리스트 영역 */
-        .item-list {
-            list-style: none;
-            padding: 0;
-            position: relative;
-            z-index: 1;
-        }
-
+        /* 품목 리스트 */
+        .item-container { width: 90%; max-width: 400px; }
+        
         .item-card {
-            background: white;
-            padding: 15px;
-            margin-bottom: 10px;
+            background: var(--card-bg);
+            margin-bottom: 15px;
+            padding: 20px;
+            border-radius: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #EEE;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 1px solid rgba(44, 44, 44, 0.1);
         }
 
-        .delete-btn {
-            background: #ffeded;
-            color: #ff4d4d;
-            border: 1px solid #ffcccc;
-            padding: 5px 10px;
-            font-size: 12px;
+        /* 하단 고정 버튼 */
+        .button-group {
+            position: fixed;
+            bottom: 30px;
+            display: flex;
+            gap: 10px;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 18px;
+            border-radius: 30px;
+            border: none;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-record { background-color: #1a1c23; color: white; }
+        .btn-settle { background-color: #ff7a2d; color: white; }
+
+        /* 입력 팝업 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            width: 80%;
+            max-width: 300px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 8px;
         }
     </style>
 </head>
 <body>
 
-<div class="dashboard">
-    <h1>옷짓는 고양이</h1>
-    
-    <div class="input-group">
-        <input type="text" id="itemName" placeholder="품목을 직접 입력하세요 (예: 실크 원피스)">
-        <input type="number" id="itemQty" placeholder="수량" style="flex: 0.3;">
-        <button onclick="addItem()">기록하기</button>
+    <div class="header">
+        <h2>옷짓는 고양이</h2>
+        <p>2026년 5월 5일</p>
     </div>
 
-    <ul class="item-list" id="listContainer">
-        <!-- 기록된 품목이 여기에 표시됩니다 -->
-    </ul>
-</div>
+    <div class="summary-card">
+        <div>26년 5월</div>
+        <div class="total-amount" id="totalDisplay">0원</div>
+        <div>총 판매액</div>
+    </div>
 
-<script>
-    // 4. 기능: 직접 입력 및 품목 관리
-    let items = JSON.parse(localStorage.getItem('catClothesData')) || [];
+    <div class="item-container" id="itemList">
+        <!-- 품목 카드가 여기에 생성됨 -->
+    </div>
 
-    function render() {
-        const container = document.getElementById('listContainer');
-        container.innerHTML = '';
-        items.forEach((item, index) => {
-            container.innerHTML += `
-                <li class="item-card">
-                    <div>
-                        <strong>${item.name}</strong> - ${item.qty}개
+    <div class="button-group">
+        <button class="btn btn-record" onclick="showModal()">📦 수량 기록</button>
+        <button class="btn btn-settle" onclick="alert('정산 기능 준비 중')">💰 정산 기록</button>
+    </div>
+
+    <!-- 직접 입력 모달 -->
+    <div class="modal" id="inputModal">
+        <div class="modal-content">
+            <h3>품목 직접 입력</h3>
+            <input type="text" id="newLabel" placeholder="품목명 (예: 실크 스카프)">
+            <input type="number" id="newPrice" placeholder="단가 (원)">
+            <button class="btn btn-record" style="width:100%" onclick="addNewItem()">추가하기</button>
+            <button class="btn" style="width:100%; margin-top:5px; background:#eee;" onclick="hideModal()">취소</button>
+        </div>
+    </div>
+
+    <script>
+        let clothesData = JSON.parse(localStorage.getItem('needleCatData')) || [];
+
+        function showModal() { document.getElementById('inputModal').style.display = 'flex'; }
+        function hideModal() { document.getElementById('inputModal').style.display = 'none'; }
+
+        function addNewItem() {
+            const label = document.getElementById('newLabel').value;
+            const price = document.getElementById('newPrice').value;
+            if(label && price) {
+                clothesData.push({ label, price: parseInt(price), count: 1 });
+                updateUI();
+                hideModal();
+                document.getElementById('newLabel').value = '';
+                document.getElementById('newPrice').value = '';
+            }
+        }
+
+        function updateUI() {
+            const list = document.getElementById('itemList');
+            list.innerHTML = '';
+            let total = 0;
+            
+            clothesData.forEach((item, index) => {
+                total += (item.price * item.count);
+                list.innerHTML += `
+                    <div class="item-card">
+                        <div>
+                            <strong>${item.label}</strong><br>
+                            <small>${item.price.toLocaleString()}원</small>
+                        </div>
+                        <div>
+                            <span>${item.count}개</span>
+                            <button onclick="deleteItem(${index})" style="margin-left:10px; border:none; background:none; color:red;">🗑️</button>
+                        </div>
                     </div>
-                    <button class="delete-btn" onclick="deleteItem(${index})">삭제</button>
-                </li>
-            `;
-        });
-        localStorage.setItem('catClothesData', JSON.stringify(items));
-    }
-
-    function addItem() {
-        const name = document.getElementById('itemName').value;
-        const qty = document.getElementById('itemQty').value;
-
-        if(name && qty) {
-            items.push({ name, qty });
-            document.getElementById('itemName').value = '';
-            document.getElementById('itemQty').value = '';
-            render();
-        } else {
-            alert("품목명과 수량을 입력해주세요!");
+                `;
+            });
+            
+            document.getElementById('totalDisplay').innerText = total.toLocaleString() + "원";
+            localStorage.setItem('needleCatData', JSON.stringify(clothesData));
         }
-    }
 
-    function deleteItem(index) {
-        if(confirm("이 기록을 삭제하시겠습니까?")) {
-            items.splice(index, 1);
-            render();
+        function deleteItem(index) {
+            clothesData.splice(index, 1);
+            updateUI();
         }
-    }
 
-    // 초기 실행
-    render();
-</script>
-
+        updateUI();
+    </script>
 </body>
 </html>
