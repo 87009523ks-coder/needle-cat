@@ -34,12 +34,9 @@
             z-index: 1000;
         }
 
-        .header { text-align: center; margin: 40px 0 10px; }
-        
-        /* 월 선택 및 전체 금액 보기 */
-        .filter-section { margin-bottom: 20px; z-index: 1001; display: flex; gap: 10px; align-items: center; }
-        select { padding: 8px; border-radius: 10px; border: 1px solid var(--gold-stitch); background: white; font-size: 14px; }
+        .header { text-align: center; margin: 40px 0 20px; }
 
+        /* 대시보드 요약 카드 */
         .summary-card {
             background: linear-gradient(135deg, #fdfbf0 0%, #f5efd7 100%);
             width: 85%; max-width: 400px;
@@ -47,24 +44,32 @@
             border-radius: 25px;
             text-align: center;
             box-shadow: 0 8px 15px rgba(0,0,0,0.05);
-            margin-bottom: 30px;
+            margin-bottom: 15px;
             border: 1px solid rgba(212, 175, 55, 0.3);
         }
         .total-amount { font-size: 32px; font-weight: bold; margin: 5px 0; }
         .grand-total { font-size: 14px; color: #888; margin-top: 10px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 10px; }
 
+        /* 월 선택기 (대시보드 아래로 이동) */
+        .month-filter { margin-bottom: 25px; z-index: 1001; }
+        select { padding: 10px 15px; border-radius: 12px; border: 1.5px solid var(--gold-stitch); background: white; font-weight: bold; }
+
+        /* 품목 리스트 */
         .list-container { width: 90%; max-width: 400px; }
         .item-card {
-            background: rgba(255, 255, 255, 0.8);
+            background: white;
             margin-bottom: 12px;
             padding: 18px;
-            border-radius: 18px;
+            border-radius: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-left: 5px solid var(--gold-stitch);
+            border-left: 6px solid var(--gold-stitch);
+            cursor: pointer; /* 클릭 가능 표시 */
+            transition: transform 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
         }
-        .item-info div { font-size: 12px; color: #888; }
+        .item-card:active { transform: scale(0.98); }
 
         .footer-btns {
             position: fixed; bottom: 30px;
@@ -82,107 +87,128 @@
         /* 모달 스타일 */
         .modal {
             display: none; position: fixed; top:0; left:0; width:100%; height:100%;
-            background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 2000;
+            background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 2000;
         }
         .modal-content {
-            background: white; padding: 25px; border-radius: 20px; width: 85%; max-width: 320px;
-            border: 2px solid var(--gold-stitch);
+            background: white; padding: 25px; border-radius: 25px; width: 85%; max-width: 320px;
         }
-        label { font-size: 12px; color: var(--gold-stitch); font-weight: bold; }
-        input { width: 100%; padding: 12px; margin: 5px 0 15px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        label { font-size: 12px; color: var(--gold-stitch); font-weight: bold; display: block; margin-top: 10px; }
+        input { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #eee; border-radius: 10px; box-sizing: border-box; background: #fafafa; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h2 style="margin:0;">옷짓는 고양이</h2>
+    <div class="header"><h2>옷짓는 고양이</h2></div>
+
+    <!-- 대시보드 -->
+    <div class="summary-card">
+        <div id="monthLabel" style="font-size: 14px; opacity: 0.7;">2026년 05월</div>
+        <div class="total-amount" id="monthlyTotal">0원</div>
+        <div style="font-size:12px; opacity: 0.5;">월간 총 판매액</div>
+        <div class="grand-total">누적 전체 금액: <span id="grandTotal">0원</span></div>
     </div>
 
-    <div class="filter-section">
+    <!-- 대시보드 아래 월 선택기 -->
+    <div class="month-filter">
         <select id="viewMonth" onchange="render()">
             <option value="2026-04">2026년 4월</option>
             <option value="2026-05" selected>2026년 5월</option>
             <option value="2026-06">2026년 6월</option>
         </select>
-        <span style="font-size: 12px; color: #888;">기록 보기</span>
-    </div>
-
-    <div class="summary-card">
-        <div id="monthLabel" style="font-size: 14px;">2026년 05월</div>
-        <div class="total-amount" id="monthlyTotal">0원</div>
-        <div style="font-size:12px; opacity: 0.6;">월간 판매액</div>
-        <div class="grand-total">누적 전체 금액: <span id="grandTotal">0원</span></div>
     </div>
 
     <div class="list-container" id="itemList"></div>
 
     <div class="footer-btns">
-        <button class="btn btn-black" onclick="showModal()">🧵 수량 기록</button>
+        <button class="btn btn-black" onclick="openModal()">🧵 수량 기록</button>
         <button class="btn btn-gold" onclick="alert('정산 기능 준비 중')">💰 정산 기록</button>
     </div>
 
-    <!-- 입력 모달 -->
+    <!-- 입력/수정 모달 -->
     <div class="modal" id="recordModal">
         <div class="modal-content">
-            <h3 style="margin: 0 0 20px 0; text-align: center;">기록 추가</h3>
+            <h3 id="modalTitle" style="margin-top:0; text-align:center;">기록 추가</h3>
+            <input type="hidden" id="editId"> <!-- 수정용 ID 보관 -->
             
-            <label>판매 날짜</label>
+            <label>날짜</label>
             <input type="date" id="pDate">
-            
             <label>품목명</label>
-            <input type="text" id="pName" placeholder="예: 비단 저고리">
-            
+            <input type="text" id="pName" placeholder="품목명을 입력하세요">
             <label>갯수</label>
             <input type="number" id="pCount" placeholder="0">
-            
             <label>단가 (원)</label>
             <input type="number" id="pPrice" placeholder="0">
             
-            <button class="btn btn-black" style="width:100%;" onclick="addRecord()">기록 저장</button>
-            <button class="btn" style="width:100%; margin-top:10px; background:#eee;" onclick="hideModal()">취소</button>
+            <button class="btn btn-black" style="width:100%; margin-top:15px;" onclick="saveRecord()">기록 저장</button>
+            <button id="delBtn" class="btn" style="width:100%; margin-top:8px; background:#ffeded; color:#ff4d4d; display:none;" onclick="deleteRecord()">이 기록 삭제</button>
+            <button class="btn" style="width:100%; margin-top:8px; background:#eee;" onclick="closeModal()">취소</button>
         </div>
     </div>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('needleCatDB_v2')) || [];
+        let db = JSON.parse(localStorage.getItem('needleCatDB_v3')) || [];
 
-        // 오늘 날짜 기본값 설정
-        document.getElementById('pDate').valueAsDate = new Date();
-
-        function showModal() { document.getElementById('recordModal').style.display = 'flex'; }
-        function hideModal() { document.getElementById('recordModal').style.display = 'none'; }
-
-        function addRecord() {
-            const date = document.getElementById('pDate').value;
-            const name = document.getElementById('pName').value;
-            const count = parseInt(document.getElementById('pCount').value);
-            const price = parseInt(document.getElementById('pPrice').value);
-
-            if(date && name && count && price) {
-                // 입력된 날짜에서 'YYYY-MM' 추출
-                const month = date.substring(0, 7);
-                db.push({ date, month, name, count, price, id: Date.now() });
-                saveAndRender();
-                hideModal();
-                // 입력폼 초기화
-                document.getElementById('pName').value = '';
-                document.getElementById('pCount').value = '';
-                document.getElementById('pPrice').value = '';
+        function openModal(editId = null) {
+            const modal = document.getElementById('recordModal');
+            const title = document.getElementById('modalTitle');
+            const delBtn = document.getElementById('delBtn');
+            
+            if (editId) {
+                const item = db.find(i => i.id === editId);
+                title.innerText = "기록 수정";
+                document.getElementById('editId').value = editId;
+                document.getElementById('pDate').value = item.date;
+                document.getElementById('pName').value = item.name;
+                document.getElementById('pCount').value = item.count;
+                document.getElementById('pPrice').value = item.price;
+                delBtn.style.display = "block";
             } else {
-                alert("모든 항목을 입력해주세요.");
+                title.innerText = "새 기록 추가";
+                document.getElementById('editId').value = "";
+                document.getElementById('pDate').valueAsDate = new Date();
+                document.getElementById('pName').value = "";
+                document.getElementById('pCount').value = "";
+                document.getElementById('pPrice').value = "";
+                delBtn.style.display = "none";
             }
+            modal.style.display = 'flex';
         }
 
-        function deleteRecord(id) {
-            if(confirm("이 기록을 삭제할까요?")) {
-                db = db.filter(item => item.id !== id);
-                saveAndRender();
-            }
-        }
+        function closeModal() { document.getElementById('recordModal').style.display = 'none'; }
 
-        function saveAndRender() {
-            localStorage.setItem('needleCatDB_v2', JSON.stringify(db));
+        function saveRecord() {
+            const id = document.getElementById('editId').value;
+            const data = {
+                date: document.getElementById('pDate').value,
+                month: document.getElementById('pDate').value.substring(0, 7),
+                name: document.getElementById('pName').value,
+                count: parseInt(document.getElementById('pCount').value),
+                price: parseInt(document.getElementById('pPrice').value),
+                id: id ? parseInt(id) : Date.now()
+            };
+
+            if(!data.name || isNaN(data.count)) return alert("정보를 모두 입력해주세요.");
+
+            if (id) { // 수정
+                const idx = db.findIndex(i => i.id === parseInt(id));
+                db[idx] = data;
+            } else { // 신규
+                db.push(data);
+            }
+
+            localStorage.setItem('needleCatDB_v3', JSON.stringify(db));
             render();
+            closeModal();
+        }
+
+        function deleteRecord() {
+            const id = parseInt(document.getElementById('editId').value);
+            if(confirm("정말 삭제하시겠습니까?")) {
+                db = db.filter(i => i.id !== id);
+                localStorage.setItem('needleCatDB_v3', JSON.stringify(db));
+                render();
+                closeModal();
+            }
         }
 
         function render() {
@@ -192,33 +218,26 @@
             const listEl = document.getElementById('itemList');
             listEl.innerHTML = '';
             
-            let mTotal = 0;
-            let gTotal = 0;
-
-            // 전체 금액 계산 (모든 데이터)
+            let mTotal = 0; let gTotal = 0;
             db.forEach(item => gTotal += (item.price * item.count));
 
-            // 해당 월 기록만 필터링 및 출력
-            const filtered = db.filter(item => item.month === targetMonth)
-                               .sort((a, b) => new Date(b.date) - new Date(a.date)); // 최신순 정렬
-            
-            filtered.forEach(item => {
-                const sum = item.price * item.count;
-                mTotal += sum;
-                listEl.innerHTML += `
-                    <div class="item-card">
+            db.filter(item => item.month === targetMonth)
+              .sort((a, b) => new Date(b.date) - new Date(a.date))
+              .forEach(item => {
+                  const sum = item.price * item.count;
+                  mTotal += sum;
+                  listEl.innerHTML += `
+                    <div class="item-card" onclick="openModal(${item.id})">
                         <div style="flex:1;">
-                            <div style="font-size:11px; color:var(--gold-stitch);">${item.date}</div>
-                            <strong>${item.name}</strong>
-                            <div style="font-size:12px; color:#888;">${item.price.toLocaleString()}원 × ${item.count}개</div>
+                            <div style="font-size:11px; color:var(--gold-stitch); margin-bottom:3px;">${item.date}</div>
+                            <strong style="font-size:17px;">${item.name}</strong>
+                            <div style="font-size:13px; color:#888; margin-top:2px;">${item.price.toLocaleString()}원 × ${item.count}개</div>
                         </div>
-                        <div style="text-align:right;">
-                            <div style="font-weight:bold;">${sum.toLocaleString()}원</div>
-                            <button onclick="deleteRecord(${item.id})" style="border:none; background:none; color:#ddd; cursor:pointer; font-size:11px;">삭제</button>
+                        <div style="text-align:right; font-weight:bold; font-size:18px;">
+                            ${sum.toLocaleString()}원
                         </div>
-                    </div>
-                `;
-            });
+                    </div>`;
+              });
             
             document.getElementById('monthlyTotal').innerText = mTotal.toLocaleString() + "원";
             document.getElementById('grandTotal').innerText = gTotal.toLocaleString() + "원";
