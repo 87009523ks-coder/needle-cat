@@ -34,81 +34,83 @@
             z-index: 1000;
         }
 
-        .header { text-align: center; margin: 40px 0 20px; }
+        .header { text-align: center; margin: 40px 0 15px; }
 
-        /* 대시보드 요약 카드 */
+        /* 대시보드 요약 카드 (강조형) */
         .summary-card {
             background: linear-gradient(135deg, #fdfbf0 0%, #f5efd7 100%);
             width: 85%; max-width: 400px;
-            padding: 25px;
-            border-radius: 25px;
+            padding: 30px 20px;
+            border-radius: 30px;
             text-align: center;
-            box-shadow: 0 8px 15px rgba(0,0,0,0.05);
-            margin-bottom: 15px;
-            border: 1px solid rgba(212, 175, 55, 0.3);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            position: relative;
         }
-        .total-amount { font-size: 32px; font-weight: bold; margin: 5px 0; }
-        .grand-total { font-size: 14px; color: #888; margin-top: 10px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 10px; }
 
-        /* 월 선택기 (대시보드 아래로 이동) */
+        .month-label { font-size: 14px; font-weight: 600; color: var(--gold-stitch); margin-bottom: 5px; }
+        .monthly-total { font-size: 20px; font-weight: 400; opacity: 0.8; margin-bottom: 15px; }
+        
+        /* '총금액' 강조 섹션 */
+        .grand-total-section {
+            border-top: 1px solid rgba(212, 175, 55, 0.2);
+            padding-top: 15px;
+            margin-top: 5px;
+        }
+        .grand-total-title { font-size: 15px; font-weight: bold; margin-bottom: 5px; }
+        .grand-total-amount { font-size: 36px; font-weight: 800; color: var(--ink-black); letter-spacing: -1px; }
+
+        /* 월 선택기 */
         .month-filter { margin-bottom: 25px; z-index: 1001; }
-        select { padding: 10px 15px; border-radius: 12px; border: 1.5px solid var(--gold-stitch); background: white; font-weight: bold; }
+        select { padding: 12px 20px; border-radius: 15px; border: 2px solid var(--gold-stitch); background: white; font-weight: bold; font-size: 15px; cursor: pointer; }
 
-        /* 품목 리스트 */
-        .list-container { width: 90%; max-width: 400px; }
+        /* 리스트 컨테이너 */
+        .list-container { width: 92%; max-width: 400px; }
         .item-card {
             background: white;
             margin-bottom: 12px;
-            padding: 18px;
+            padding: 20px;
             border-radius: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-left: 6px solid var(--gold-stitch);
-            cursor: pointer; /* 클릭 가능 표시 */
-            transition: transform 0.2s;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            cursor: pointer;
         }
-        .item-card:active { transform: scale(0.98); }
 
         .footer-btns {
             position: fixed; bottom: 30px;
-            display: flex; gap: 15px;
+            display: flex; gap: 12px;
             width: 90%; max-width: 400px;
             z-index: 1001;
         }
-        .btn {
-            flex: 1; padding: 18px; border-radius: 35px; border: none;
-            font-weight: bold; font-size: 16px; cursor: pointer;
-        }
+        .btn { flex: 1; padding: 20px; border-radius: 40px; border: none; font-weight: 800; font-size: 16px; cursor: pointer; box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
         .btn-black { background: #1a1c23; color: white; }
         .btn-gold { background: var(--gold-stitch); color: white; }
 
-        /* 모달 스타일 */
-        .modal {
-            display: none; position: fixed; top:0; left:0; width:100%; height:100%;
-            background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 2000;
-        }
-        .modal-content {
-            background: white; padding: 25px; border-radius: 25px; width: 85%; max-width: 320px;
-        }
-        label { font-size: 12px; color: var(--gold-stitch); font-weight: bold; display: block; margin-top: 10px; }
-        input { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #eee; border-radius: 10px; box-sizing: border-box; background: #fafafa; }
+        /* 모달 창 */
+        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 2000; }
+        .modal-content { background: white; padding: 30px; border-radius: 30px; width: 85%; max-width: 320px; }
+        input { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #eee; border-radius: 12px; box-sizing: border-box; background: #fcfcfc; font-size: 16px; }
+        label { font-size: 13px; font-weight: bold; color: var(--gold-stitch); margin-left: 5px; }
     </style>
 </head>
 <body>
 
     <div class="header"><h2>옷짓는 고양이</h2></div>
 
-    <!-- 대시보드 -->
     <div class="summary-card">
-        <div id="monthLabel" style="font-size: 14px; opacity: 0.7;">2026년 05월</div>
-        <div class="total-amount" id="monthlyTotal">0원</div>
-        <div style="font-size:12px; opacity: 0.5;">월간 총 판매액</div>
-        <div class="grand-total">누적 전체 금액: <span id="grandTotal">0원</span></div>
+        <div id="displayMonth" class="month-label">2026년 05월</div>
+        <div id="monthlyTotal" class="monthly-total">월 판매: 0원</div>
+        
+        <div class="grand-total-section">
+            <div class="grand-total-title">총금액</div>
+            <div id="grandTotal" class="grand-total-amount">0원</div>
+        </div>
     </div>
 
-    <!-- 대시보드 아래 월 선택기 -->
     <div class="month-filter">
         <select id="viewMonth" onchange="render()">
             <option value="2026-04">2026년 4월</option>
@@ -124,38 +126,29 @@
         <button class="btn btn-gold" onclick="alert('정산 기능 준비 중')">💰 정산 기록</button>
     </div>
 
-    <!-- 입력/수정 모달 -->
     <div class="modal" id="recordModal">
         <div class="modal-content">
             <h3 id="modalTitle" style="margin-top:0; text-align:center;">기록 추가</h3>
-            <input type="hidden" id="editId"> <!-- 수정용 ID 보관 -->
-            
-            <label>날짜</label>
-            <input type="date" id="pDate">
-            <label>품목명</label>
-            <input type="text" id="pName" placeholder="품목명을 입력하세요">
-            <label>갯수</label>
-            <input type="number" id="pCount" placeholder="0">
-            <label>단가 (원)</label>
-            <input type="number" id="pPrice" placeholder="0">
-            
+            <input type="hidden" id="editId">
+            <label>판매 날짜</label><input type="date" id="pDate">
+            <label>품목명</label><input type="text" id="pName">
+            <label>갯수</label><input type="number" id="pCount">
+            <label>단가 (원)</label><input type="number" id="pPrice">
             <button class="btn btn-black" style="width:100%; margin-top:15px;" onclick="saveRecord()">기록 저장</button>
-            <button id="delBtn" class="btn" style="width:100%; margin-top:8px; background:#ffeded; color:#ff4d4d; display:none;" onclick="deleteRecord()">이 기록 삭제</button>
-            <button class="btn" style="width:100%; margin-top:8px; background:#eee;" onclick="closeModal()">취소</button>
+            <button id="delBtn" class="btn" style="width:100%; margin-top:10px; background:#ffebeb; color:#ff4d4d; display:none;" onclick="deleteRecord()">기록 삭제</button>
+            <button class="btn" style="width:100%; margin-top:10px; background:#f5f5f5;" onclick="closeModal()">취소</button>
         </div>
     </div>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('needleCatDB_v3')) || [];
+        let db = JSON.parse(localStorage.getItem('needleCatDB_v4')) || [];
 
         function openModal(editId = null) {
             const modal = document.getElementById('recordModal');
-            const title = document.getElementById('modalTitle');
             const delBtn = document.getElementById('delBtn');
-            
             if (editId) {
                 const item = db.find(i => i.id === editId);
-                title.innerText = "기록 수정";
+                document.getElementById('modalTitle').innerText = "기록 수정";
                 document.getElementById('editId').value = editId;
                 document.getElementById('pDate').value = item.date;
                 document.getElementById('pName').value = item.name;
@@ -163,7 +156,7 @@
                 document.getElementById('pPrice').value = item.price;
                 delBtn.style.display = "block";
             } else {
-                title.innerText = "새 기록 추가";
+                document.getElementById('modalTitle').innerText = "새 기록 추가";
                 document.getElementById('editId').value = "";
                 document.getElementById('pDate').valueAsDate = new Date();
                 document.getElementById('pName').value = "";
@@ -186,63 +179,50 @@
                 price: parseInt(document.getElementById('pPrice').value),
                 id: id ? parseInt(id) : Date.now()
             };
-
-            if(!data.name || isNaN(data.count)) return alert("정보를 모두 입력해주세요.");
-
-            if (id) { // 수정
+            if(!data.name || isNaN(data.count)) return alert("모든 항목을 입력해주세요.");
+            if (id) {
                 const idx = db.findIndex(i => i.id === parseInt(id));
                 db[idx] = data;
-            } else { // 신규
-                db.push(data);
-            }
-
-            localStorage.setItem('needleCatDB_v3', JSON.stringify(db));
-            render();
-            closeModal();
+            } else { db.push(data); }
+            localStorage.setItem('needleCatDB_v4', JSON.stringify(db));
+            render(); closeModal();
         }
 
         function deleteRecord() {
             const id = parseInt(document.getElementById('editId').value);
-            if(confirm("정말 삭제하시겠습니까?")) {
+            if(confirm("이 기록을 삭제할까요?")) {
                 db = db.filter(i => i.id !== id);
-                localStorage.setItem('needleCatDB_v3', JSON.stringify(db));
-                render();
-                closeModal();
+                localStorage.setItem('needleCatDB_v4', JSON.stringify(db));
+                render(); closeModal();
             }
         }
 
         function render() {
             const targetMonth = document.getElementById('viewMonth').value;
-            document.getElementById('monthLabel').innerText = targetMonth.replace('-', '년 ') + '월';
-            
+            document.getElementById('displayMonth').innerText = targetMonth.replace('-', '년 ') + '월';
             const listEl = document.getElementById('itemList');
             listEl.innerHTML = '';
-            
             let mTotal = 0; let gTotal = 0;
-            db.forEach(item => gTotal += (item.price * item.count));
 
-            db.filter(item => item.month === targetMonth)
-              .sort((a, b) => new Date(b.date) - new Date(a.date))
-              .forEach(item => {
-                  const sum = item.price * item.count;
-                  mTotal += sum;
-                  listEl.innerHTML += `
-                    <div class="item-card" onclick="openModal(${item.id})">
-                        <div style="flex:1;">
-                            <div style="font-size:11px; color:var(--gold-stitch); margin-bottom:3px;">${item.date}</div>
-                            <strong style="font-size:17px;">${item.name}</strong>
-                            <div style="font-size:13px; color:#888; margin-top:2px;">${item.price.toLocaleString()}원 × ${item.count}개</div>
-                        </div>
-                        <div style="text-align:right; font-weight:bold; font-size:18px;">
-                            ${sum.toLocaleString()}원
-                        </div>
-                    </div>`;
-              });
-            
-            document.getElementById('monthlyTotal').innerText = mTotal.toLocaleString() + "원";
-            document.getElementById('grandTotal').innerText = gTotal.toLocaleString() + "원";
+            db.forEach(item => {
+                gTotal += (item.price * item.count);
+                if(item.month === targetMonth) {
+                    const sum = item.price * item.count;
+                    mTotal += sum;
+                    listEl.innerHTML += `
+                        <div class="item-card" onclick="openModal(${item.id})">
+                            <div style="flex:1;">
+                                <div style="font-size:11px; color:var(--gold-stitch);">${item.date}</div>
+                                <strong style="font-size:17px;">${item.name}</strong>
+                                <div style="font-size:13px; color:#888;">${item.price.toLocaleString()}원 × ${item.count}개</div>
+                            </div>
+                            <div style="font-weight:bold; font-size:18px;">${sum.toLocaleString()}원</div>
+                        </div>`;
+                }
+            });
+            document.getElementById('monthlyTotal').innerText = `월 판매: ${mTotal.toLocaleString()}원`;
+            document.getElementById('grandTotal').innerText = `${gTotal.toLocaleString()}원`;
         }
-
         render();
     </script>
 </body>
