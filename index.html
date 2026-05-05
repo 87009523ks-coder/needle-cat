@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>옷짓는 고양이 - 재고 관리</title>
+    <style>
+        /* 1. 디자인: 아이보리 비단 배경 & 먹색 스티치 */
+        body {
+            background-color: #F5F5DC; /* 아이보리 색상 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Pretendard', sans-serif;
+        }
+
+        .dashboard {
+            background-color: #FDFDF5; /* 비단 느낌의 연한 아이보리 */
+            width: 90%;
+            max-width: 800px;
+            padding: 40px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 5px;
+        }
+
+        /* 먹색(먹박) 스티치 테두리 */
+        .dashboard::before {
+            content: '';
+            position: absolute;
+            top: 4px; /* 약 1~2mm 안쪽 */
+            left: 4px;
+            right: 4px;
+            bottom: 4px;
+            border: 2px dashed #2C2C2C; /* 먹색 실 */
+            pointer-events: none;
+            /* 땀 길이를 길게 설정 (15px 실, 10px 공백) */
+            stroke-dasharray: 15, 10; 
+            border-radius: 3px;
+        }
+
+        h1 { color: #2C2C2C; text-align: center; margin-bottom: 30px; font-weight: 300; }
+
+        /* 2. 입력 영역 */
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            z-index: 1;
+            position: relative;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #D1D1C1;
+            background: rgba(255,255,255,0.5);
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 12px 20px;
+            background-color: #2C2C2C;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        button:hover { background-color: #444; }
+
+        /* 3. 리스트 영역 */
+        .item-list {
+            list-style: none;
+            padding: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .item-card {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #EEE;
+        }
+
+        .delete-btn {
+            background: #ffeded;
+            color: #ff4d4d;
+            border: 1px solid #ffcccc;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <h1>옷짓는 고양이</h1>
+    
+    <div class="input-group">
+        <input type="text" id="itemName" placeholder="품목을 직접 입력하세요 (예: 실크 원피스)">
+        <input type="number" id="itemQty" placeholder="수량" style="flex: 0.3;">
+        <button onclick="addItem()">기록하기</button>
+    </div>
+
+    <ul class="item-list" id="listContainer">
+        <!-- 기록된 품목이 여기에 표시됩니다 -->
+    </ul>
+</div>
+
+<script>
+    // 4. 기능: 직접 입력 및 품목 관리
+    let items = JSON.parse(localStorage.getItem('catClothesData')) || [];
+
+    function render() {
+        const container = document.getElementById('listContainer');
+        container.innerHTML = '';
+        items.forEach((item, index) => {
+            container.innerHTML += `
+                <li class="item-card">
+                    <div>
+                        <strong>${item.name}</strong> - ${item.qty}개
+                    </div>
+                    <button class="delete-btn" onclick="deleteItem(${index})">삭제</button>
+                </li>
+            `;
+        });
+        localStorage.setItem('catClothesData', JSON.stringify(items));
+    }
+
+    function addItem() {
+        const name = document.getElementById('itemName').value;
+        const qty = document.getElementById('itemQty').value;
+
+        if(name && qty) {
+            items.push({ name, qty });
+            document.getElementById('itemName').value = '';
+            document.getElementById('itemQty').value = '';
+            render();
+        } else {
+            alert("품목명과 수량을 입력해주세요!");
+        }
+    }
+
+    function deleteItem(index) {
+        if(confirm("이 기록을 삭제하시겠습니까?")) {
+            items.splice(index, 1);
+            render();
+        }
+    }
+
+    // 초기 실행
+    render();
+</script>
+
+</body>
+</html>
