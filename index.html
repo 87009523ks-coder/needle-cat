@@ -6,7 +6,7 @@
     <title>옷 짓는 고양이</title>
     <style>
         :root { --main-color: #2196F3; --bg-color: #F5F7FA; --red-color: #F44336; }
-        body { font-family: -apple-system, sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; color: #333; line-height: 1.5; }
+        body { font-family: -apple-system, sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; color: #333; }
         .header { margin: 20px 0; font-size: 24px; font-weight: 800; text-align: center; color: #1A237E; }
         .summary-card { background: linear-gradient(135deg, #2196F3, #1976D2); border-radius: 24px; padding: 25px; color: white; box-shadow: 0 8px 16px rgba(33,150,243,0.2); margin-bottom: 20px; }
         .label { font-size: 13px; opacity: 0.9; margin-bottom: 5px; }
@@ -16,13 +16,12 @@
         h3 { font-size: 16px; margin: 0 0 15px 0; color: #444; }
         .input-group { margin-bottom: 12px; }
         .input-group label { display: block; font-size: 11px; color: #888; margin-bottom: 4px; padding-left: 2px; }
-        input { width: 100%; padding: 12px; border: 1px solid #E0E0E0; border-radius: 10px; box-sizing: border-box; background: #FAFAFA; font-size: 15px; outline: none; transition: 0.2s; }
-        input:focus { border-color: var(--main-color); background: #fff; }
+        input { width: 100%; padding: 12px; border: 1px solid #E0E0E0; border-radius: 10px; box-sizing: border-box; background: #FAFAFA; font-size: 15px; outline: none; }
         input[readonly] { background: #F0F4F8; color: var(--main-color); font-weight: 600; border: 1px dashed #BDC3C7; }
         .btn { background: var(--main-color); color: white; border: none; padding: 16px; border-radius: 12px; width: 100%; font-size: 15px; font-weight: 700; margin-top: 8px; cursor: pointer; }
-        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #F0F0F0; font-size: 14px; }
+        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #F0F0F0; }
         .history-item:last-child { border-bottom: none; }
-        .del-btn { background: none; border: 1px solid #ff000033; color: var(--red-color); padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; }
+        .del-btn { background: #FFEBEE; color: var(--red-color); border: none; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -52,9 +51,7 @@
 
 <div class="card">
     <h3>최근 기록</h3>
-    <div id="historyList">
-        <p style="text-align:center; color:#999; font-size:12px;">데이터를 불러오는 중입니다...</p>
-    </div>
+    <div id="historyList">데이터를 연결 중입니다...</div>
 </div>
 
 <script type="module">
@@ -73,6 +70,7 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+    const salesRef = ref(db, 'delivery'); // 'delivery' 경로 고정
 
     window.calculateTotal = () => {
         const qty = document.getElementById('inputDelivery').value || 0;
@@ -87,55 +85,63 @@
         const price = Number(document.getElementById('inputPrice').value);
 
         if(!date) { alert('날짜를 선택해주세요.'); return; }
-        if(!confirm(`${date}\n수량: ${delivery}개\n저장할까요?`)) return;
+        if(!confirm(`[저장 확인]\n날짜: ${date}\n수량: ${delivery}개\n\n이대로 저장할까요?`)) return;
 
         try {
-            await push(ref(db, 'delivery'), {
+            await push(salesRef, {
                 date, delivery, material, price, total: delivery * price, timestamp: Date.now()
             });
             document.getElementById('inputDelivery').value = '';
             document.getElementById('inputMaterial').value = '';
             calculateTotal();
-        } catch (e) { alert('저장 실패!'); }
+        } catch (e) { alert('저장 실패: ' + e.message); }
     };
 
     window.deleteItem = async (id) => {
-        if(confirm("이 기록을 삭제하시겠습니까?")) {
+        if(confirm("이 기록을 정말 삭제하시겠습니까?")) {
             try {
                 await remove(ref(db, `delivery/${id}`));
             } catch (e) { alert("삭제 실패"); }
         }
     };
 
-    // 데이터 읽기 경로를 'delivery'로 확실히 지정
-    onValue(ref(db, 'delivery'), (snapshot) => {
+    // 데이터 수신 로직 강화
+    onValue(salesRef, (snapshot) => {
         const data = snapshot.val();
         let totalQty = 0, totalPrice = 0, monthQty = 0, monthCount = 0;
         const historyHtml = [];
         const currentMonth = new Date().toISOString().substring(0, 7);
 
         if (data) {
-            const items = Object.keys(data).map(key => ({ id: key, ...data[key] }));
-            // 날짜 내림차순 정렬
+            // 데이터를 배열로 변환하고 날짜 역순 정렬
+            const items = Object.entries(data).map(([id, values]) => ({ id, ...values }));
             items.sort((a, b) => b.date.localeCompare(a.date));
 
             items.forEach((item) => {
-                totalQty += (item.delivery || 0);
-                totalPrice += (item.total || 0);
+                const qty = Number(item.delivery || 0);
+                const sum = Number(item.total || 0);
+                
+                totalQty += qty;
+                totalPrice += sum;
+                
                 if(item.date && item.date.startsWith(currentMonth)) {
-                    monthQty += (item.delivery || 0);
+                    monthQty += qty;
                     monthCount++;
                 }
+                
                 historyHtml.push(`
                     <div class="history-item">
-                        <span>${item.date} (${item.delivery}개) <b>₩${(item.total || 0).toLocaleString()}</b></span>
+                        <div style="display:flex; flex-direction:column;">
+                            <span style="font-weight:bold; font-size:15px;">${item.date}</span>
+                            <span style="font-size:12px; color:#666;">${qty}개 / ₩${sum.toLocaleString()}</span>
+                        </div>
                         <button class="del-btn" onclick="deleteItem('${item.id}')">삭제</button>
                     </div>
                 `);
             });
             document.getElementById('historyList').innerHTML = historyHtml.join('');
         } else {
-            document.getElementById('historyList').innerHTML = '<p style="text-align:center; color:#999; font-size:12px;">기록이 없습니다.</p>';
+            document.getElementById('historyList').innerHTML = '<p style="text-align:center; color:#999;">기록이 없습니다.</p>';
         }
 
         document.getElementById('totalQty').innerText = totalQty + '개'; 
