@@ -5,49 +5,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>집 짓는 고양이</title>
     <style>
-        :root { --main: #4CAF50; --bg: #F9F9F9; } /* 집 짓는 이미지에 맞춰 초록색 톤 */
+        :root { --main: #4CAF50; --bg: #F9F9F9; --dark: #2E7D32; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #333; }
-        .header { text-align: center; font-size: 26px; font-weight: 900; color: #2E7D32; margin: 20px 0; }
+        .header { text-align: center; font-size: 26px; font-weight: 900; color: var(--dark); margin: 20px 0; }
         
+        /* 상단 요약 */
         .summary-card { background: linear-gradient(135deg, #4CAF50, #2E7D32); border-radius: 24px; padding: 25px; color: white; margin-bottom: 20px; box-shadow: 0 8px 16px rgba(76,175,80,0.2); }
-        .label { font-size: 13px; opacity: 0.9; margin-bottom: 5px; }
-        .value { font-size: 28px; font-weight: 700; margin-bottom: 15px; }
-        
+        .summary-card div { margin-bottom: 5px; opacity: 0.9; font-size: 13px; }
+        .summary-card b { font-size: 28px; display: block; margin-bottom: 15px; opacity: 1; }
+
+        /* 입력 폼 */
         .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .input-group { margin-bottom: 12px; }
-        .input-group label { display: block; font-size: 11px; color: #888; margin-bottom: 4px; }
-        input { width: 100%; padding: 12px; border: 1px solid #E0E0E0; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
+        h3 { font-size: 16px; margin: 0 0 15px 0; color: #444; }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 12px; color: #888; margin-bottom: 5px; font-weight: bold; }
+        input { width: 100%; padding: 14px; border: 1px solid #E0E0E0; border-radius: 12px; box-sizing: border-box; font-size: 16px; background: #FAFAFA; outline: none; }
+        input:focus { border-color: var(--main); background: #FFF; }
         
-        .btn { background: #2E7D32; color: white; border: none; padding: 16px; border-radius: 12px; width: 100%; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 10px; }
+        .btn { background: var(--dark); color: white; border: none; padding: 18px; border-radius: 15px; width: 100%; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .btn:active { transform: scale(0.98); opacity: 0.9; }
         
-        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #EEE; }
-        .del-btn { background: #FFEBEE; color: #F44336; border: none; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; }
-        
-        #conn-status { font-size: 11px; text-align: center; margin-bottom: 10px; font-weight: bold; }
+        /* 리스트 */
+        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #F0F0F0; }
+        .item-info b { font-size: 16px; display: block; color: #222; }
+        .item-info span { font-size: 13px; color: #777; }
+        .del-btn { background: #FFEBEE; color: #F44336; border: none; padding: 8px 12px; border-radius: 10px; font-size: 12px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div class="header">🏠 집 짓는 고양이</div>
-<div id="conn-status">서버 연결 시도 중...</div>
 
 <div class="summary-card">
-    <div class="label">이달의 작업 수량</div>
-    <div id="monthQty" class="value">0개</div>
-    <div class="label">누적 판매액</div>
-    <div id="totalPrice" class="value">₩0</div>
+    <div>이달의 작업 수량</div>
+    <b id="monthQty">0개</b>
+    <div>이달의 예상 매출</div>
+    <b id="monthPrice">₩0</b>
 </div>
 
 <div class="card">
-    <div class="input-group"><label>날짜</label><input type="date" id="inputDate"></div>
-    <div class="input-group"><label>수량(개)</label><input type="number" id="inputDelivery" placeholder="0"></div>
-    <div class="input-group"><label>단가(원)</label><input type="number" id="inputPrice" value="50000"></div>
-    <button class="btn" onclick="saveData()">저장하기</button>
+    <h3>새 작업 기록</h3>
+    <div class="input-group">
+        <label>날짜</label>
+        <input type="date" id="inputDate">
+    </div>
+    <div class="input-group">
+        <label>작업 수량(개)</label>
+        <input type="number" id="inputQty" placeholder="수량을 입력하세요">
+    </div>
+    <div class="input-group">
+        <label>단가(원)</label>
+        <input type="number" id="inputPrice" value="50000">
+    </div>
+    <button class="btn" onclick="saveData()">데이터 저장하기</button>
 </div>
 
 <div class="card">
-    <h3 style="font-size:16px; margin:0 0 15px 0;">최근 기록</h3>
-    <div id="historyList">기록을 불러오는 중...</div>
+    <h3>최근 기록 (5월 10일 포함)</h3>
+    <div id="historyList">기록을 확인하고 있습니다...</div>
 </div>
 
 <script type="module">
@@ -64,76 +79,67 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    const salesRef = ref(db, 'house_cat_records'); // 완전히 새로운 데이터 경로
+    const dbRef = ref(db, 'house_cat_v2'); // 꼬이지 않게 새로운 경로 사용
 
-    // 연결 확인
-    onValue(ref(db, '.info/connected'), (snap) => {
-        const status = document.getElementById('conn-status');
-        if (snap.val() === true) {
-            status.innerText = "● 서버와 연결되었습니다";
-            status.style.color = "#2E7D32";
-        } else {
-            status.innerText = "○ 연결 시도 중...";
-            status.style.color = "red";
-        }
-    });
-
-    // 데이터 저장
+    // 저장 함수
     window.saveData = async () => {
         const date = document.getElementById('inputDate').value;
-        const qty = Number(document.getElementById('inputDelivery').value || 0);
-        const price = Number(document.getElementById('inputPrice').value || 0);
+        const qty = Number(document.getElementById('inputQty').value);
+        const price = Number(document.getElementById('inputPrice').value);
 
-        if(!date || qty <= 0) return alert('날짜와 수량을 확인해주세요.');
-        
-        if(!confirm(`[저장 확인]\n날짜: ${date}\n수량: ${qty}개\n\n저장할까요?`)) return;
+        if(!date || qty <= 0) return alert('날짜와 수량을 정확히 입력해주세요.');
+
+        // 확인 팝업
+        if(!confirm(`[저장 확인]\n날짜: ${date}\n수량: ${qty}개\n\n이 기록을 저장하시겠습니까?`)) return;
 
         try {
-            await push(salesRef, {
+            await push(dbRef, {
                 date, qty, price, total: qty * price, timestamp: Date.now()
             });
-            document.getElementById('inputDelivery').value = '';
-            alert('저장되었습니다.');
-        } catch (e) { alert('오류 발생: ' + e.message); }
+            document.getElementById('inputQty').value = '';
+            alert('성공적으로 저장되었습니다.');
+        } catch (e) { alert('오류가 발생했습니다.'); }
     };
 
-    // 데이터 삭제
+    // 삭제 함수
     window.deleteItem = (id) => {
-        if(confirm('삭제하시겠습니까?')) remove(ref(db, `house_cat_records/${id}`));
+        if(confirm('이 기록을 삭제하시겠습니까?')) remove(ref(db, `house_cat_v2/${id}`));
     };
 
-    // 화면 업데이트
-    onValue(salesRef, (snapshot) => {
+    // 실시간 데이터 로드
+    onValue(dbRef, (snapshot) => {
         const data = snapshot.val();
         const list = document.getElementById('historyList');
         const currentMonth = new Date().toISOString().substring(0, 7);
         
-        let mQty = 0, tPrice = 0;
+        let mQty = 0, mPrice = 0;
         let html = '';
 
         if (data) {
             const sorted = Object.entries(data).sort((a, b) => b[1].date.localeCompare(a[1].date));
             sorted.forEach(([id, val]) => {
-                tPrice += (val.total || 0);
-                if(val.date.startsWith(currentMonth)) mQty += (val.qty || 0);
-                
+                if(val.date.startsWith(currentMonth)) {
+                    mQty += (val.qty || 0);
+                    mPrice += (val.total || 0);
+                }
                 html += `
                     <div class="history-item">
-                        <div>
-                            <div style="font-weight:bold;">${val.date}</div>
-                            <div style="font-size:12px; color:#666;">${val.qty}개 / ₩${(val.total || 0).toLocaleString()}</div>
+                        <div class="item-info">
+                            <b>${val.date}</b>
+                            <span>${val.qty}개 / ₩${(val.total || 0).toLocaleString()}</span>
                         </div>
                         <button class="del-btn" onclick="deleteItem('${id}')">삭제</button>
                     </div>`;
             });
             list.innerHTML = html;
         } else {
-            list.innerHTML = '<p style="text-align:center; color:#999; font-size:12px;">기록이 없습니다.</p>';
+            list.innerHTML = '<p style="text-align:center; color:#999;">저장된 기록이 없습니다.</p>';
         }
         document.getElementById('monthQty').innerText = mQty + '개';
-        document.getElementById('totalPrice').innerText = '₩' + tPrice.toLocaleString();
+        document.getElementById('monthPrice').innerText = '₩' + mPrice.toLocaleString();
     });
 
+    // 오늘 날짜 자동 세팅
     document.getElementById('inputDate').value = new Date().toISOString().substring(0, 10);
 </script>
 </body>
