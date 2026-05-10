@@ -19,10 +19,8 @@
         input { width: 100%; padding: 12px; border: 1px solid #E0E0E0; border-radius: 10px; box-sizing: border-box; background: #FAFAFA; font-size: 15px; outline: none; }
         input[readonly] { background: #F0F4F8; color: var(--main-color); font-weight: 600; border: 1px dashed #BDC3C7; }
         .btn { background: var(--main-color); color: white; border: none; padding: 16px; border-radius: 12px; width: 100%; font-size: 15px; font-weight: 700; margin-top: 8px; cursor: pointer; }
-        
-        /* 리스트 스타일 및 삭제 버튼 */
         .history-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #F0F0F0; font-size: 14px; }
-        .del-btn { background: none; border: 1px solid #ff000033; color: var(--red-color); padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; margin-left: 10px; }
+        .del-btn { background: none; border: 1px solid #ff000033; color: var(--red-color); padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -57,11 +55,12 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBdnFr8vjNOFeovvFm9Umxv kEpvnuAWLY",
         authDomain: "needle-cat.firebaseapp.com",
+        databaseURL: "https://needle-cat-default-rtdb.firebaseio.com", // 실시간 데이터베이스 주소
         projectId: "needle-cat",
         storageBucket: "needle-cat.appspot.com",
         messagingSenderId: "422542027971",
@@ -69,7 +68,7 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    const db = getDatabase(app);
 
     window.calculateTotal = () => {
         const qty = document.getElementById('inputDelivery').value || 0;
@@ -77,7 +76,6 @@
         document.getElementById('inputTotal').value = (qty * price).toLocaleString() + '원';
     };
 
-    // 1. 저장 확인 팝업 추가
     window.saveData = async () => {
         const date = document.getElementById('inputDate').value;
         const delivery = Number(document.getElementById('inputDelivery').value);
@@ -85,47 +83,51 @@
         const price = Number(document.getElementById('inputPrice').value);
 
         if(!date) { alert('날짜를 선택해주세요.'); return; }
-        
-        if(!confirm(`${date}\n수량: ${delivery}개\n금액: ${(delivery * price).toLocaleString()}원\n\n저장할까요?`)) return;
+        if(!confirm(`${date}\n수량: ${delivery}개\n저장할까요?`)) return;
 
         try {
-            await addDoc(collection(db, "sales"), {
-                date: date, delivery: delivery, material: material, price: price, total: delivery * price, timestamp: new Date()
+            await push(ref(db, 'delivery'), {
+                date, delivery, material, price, total: delivery * price, timestamp: Date.now()
             });
             document.getElementById('inputDelivery').value = '';
             document.getElementById('inputMaterial').value = '';
             calculateTotal();
-        } catch (e) { alert('저장 실패'); }
+        } catch (e) { alert('저장 실패: ' + e.message); }
     };
 
-    // 2. 삭제 기능 추가
     window.deleteItem = async (id) => {
-        if(confirm("정말 이 기록을 삭제하시겠습니까?")) {
+        if(confirm("이 기록을 삭제하시겠습니까?")) {
             try {
-                await deleteDoc(doc(db, "sales", id));
+                await remove(ref(db, `delivery/${id}`));
             } catch (e) { alert("삭제 실패"); }
         }
     };
 
-    const q = query(collection(db, "sales"), orderBy("date", "desc"));
-    onSnapshot(q, (snapshot) => {
+    // 실시간 데이터 수신 및 UI 업데이트
+    onValue(ref(db, 'delivery'), (snapshot) => {
         let totalQty = 0, totalPrice = 0, monthQty = 0, monthCount = 0;
         const historyHtml = [];
         const currentMonth = new Date().toISOString().substring(0, 7);
+        const data = snapshot.val();
 
-        snapshot.forEach((fbDoc) => {
-            const data = fbDoc.data();
-            totalQty += data.delivery;
-            totalPrice += data.total;
-            if(data.date.startsWith(currentMonth)) { monthQty += data.delivery; monthCount++; }
-            
-            historyHtml.push(`
-                <div class="history-item">
-                    <span>${data.date} (${data.delivery}개) <b>₩${data.total.toLocaleString()}</b></span>
-                    <button class="del-btn" onclick="deleteItem('${fbDoc.id}')">삭제</button>
-                </div>
-            `);
-        });
+        if (data) {
+            // 데이터를 날짜 역순으로 정렬하기 위해 배열로 변환
+            const items = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+            items.sort((a, b) => b.date.localeCompare(a.date));
+
+            items.forEach((item) => {
+                totalQty += item.delivery;
+                totalPrice += item.total;
+                if(item.date.startsWith(currentMonth)) { monthQty += item.delivery; monthCount++; }
+                
+                historyHtml.push(`
+                    <div class="history-item">
+                        <span>${item.date} (${item.delivery}개) <b>₩${item.total.toLocaleString()}</b></span>
+                        <button class="del-btn" onclick="deleteItem('${item.id}')">삭제</button>
+                    </div>
+                `);
+            });
+        }
 
         document.getElementById('totalQty').innerText = totalQty + '개'; 
         document.getElementById('monthQty').innerText = monthQty + '개';
