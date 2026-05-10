@@ -1,229 +1,158 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>옷짓는 고양이</title>
-    <style>
-        :root {
-            --ivory-bg: #F9F7F2;
-            --gold-stitch: #D4AF37;
-            --ink-black: #2C2C2C;
-        }
+import React, { useState } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, Modal, TextInput, ScrollView, Dimensions } from 'react-native';
+import { LineChart } from "react-native-chart-kit";
+import { Plus, CheckCircle2 } from 'lucide-react-native';
 
-        body {
-            background-color: var(--ivory-bg);
-            margin: 0;
-            font-family: 'Pretendard', sans-serif;
-            color: var(--ink-black);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding-bottom: 120px;
-            min-height: 100vh;
-        }
+const screenWidth = Dimensions.get("window").width;
 
-        /* 금색 스티치 테두리 */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 10px; left: 10px; right: 10px; bottom: 10px;
-            border: 2px dashed var(--gold-stitch);
-            stroke-dasharray: 25, 15;
-            pointer-events: none;
-            z-index: 1000;
-        }
+export default function App() {
+  const [modalVisible, setModalVisible] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  
+  // 데이터 상태 (초기값 예시)
+  const [history, setHistory] = useState([
+    { date: '05-01', delivery: 10, material: 50, price: 500000 },
+    { date: '05-08', delivery: 15, material: 70, price: 750000 },
+  ]);
 
-        .header { text-align: center; margin: 40px 0 15px; }
+  // 상단 요약 정보 계산
+  const totalDelivery = history.reduce((sum, item) => sum + item.delivery, 0);
+  const totalPrice = history.reduce((sum, item) => sum + item.price, 0);
 
-        /* 대시보드 요약 카드 (강조형) */
-        .summary-card {
-            background: linear-gradient(135deg, #fdfbf0 0%, #f5efd7 100%);
-            width: 85%; max-width: 400px;
-            padding: 30px 20px;
-            border-radius: 30px;
-            text-align: center;
-            box-shadow: 0 12px 25px rgba(0,0,0,0.08);
-            margin-bottom: 20px;
-            border: 1px solid rgba(212, 175, 55, 0.4);
-            position: relative;
-        }
+  const handleSave = () => {
+    // 저장 로직 (실제로는 입력값을 state에 추가)
+    setModalVisible(false);
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 2000);
+  };
 
-        .month-label { font-size: 14px; font-weight: 600; color: var(--gold-stitch); margin-bottom: 5px; }
-        .monthly-total { font-size: 20px; font-weight: 400; opacity: 0.8; margin-bottom: 15px; }
-        
-        /* '총금액' 강조 섹션 */
-        .grand-total-section {
-            border-top: 1px solid rgba(212, 175, 55, 0.2);
-            padding-top: 15px;
-            margin-top: 5px;
-        }
-        .grand-total-title { font-size: 15px; font-weight: bold; margin-bottom: 5px; }
-        .grand-total-amount { font-size: 36px; font-weight: 800; color: var(--ink-black); letter-spacing: -1px; }
+  return (
+    <View style={styles.container}>
+      {/* 1. 헤더 영역 */}
+      <View style={styles.header}>
+        <Text style={styles.title}>옷짓는 고양이</Text>
+      </View>
 
-        /* 월 선택기 */
-        .month-filter { margin-bottom: 25px; z-index: 1001; }
-        select { padding: 12px 20px; border-radius: 15px; border: 2px solid var(--gold-stitch); background: white; font-weight: bold; font-size: 15px; cursor: pointer; }
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* 2. 대시보드 카드 */}
+        <View style={styles.summaryCard}>
+          <View style={styles.summaryItem}>
+            <Text style={styles.label}>판매 갯수</Text>
+            <Text style={styles.value}>{totalDelivery.toLocaleString()} <Text style={styles.unit}>개</Text></Text>
+          </View>
+          <View style={styles.divider} />
+          <View style={styles.summaryItem}>
+            <Text style={styles.label}>결제 금액</Text>
+            <Text style={styles.value}>₩{totalPrice.toLocaleString()}</Text>
+          </View>
+        </View>
 
-        /* 리스트 컨테이너 */
-        .list-container { width: 92%; max-width: 400px; }
-        .item-card {
-            background: white;
-            margin-bottom: 12px;
-            padding: 20px;
-            border-radius: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-left: 6px solid var(--gold-stitch);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-            cursor: pointer;
-        }
+        {/* 3. 차트 영역 */}
+        <Text style={styles.sectionTitle}>판매 추이</Text>
+        <LineChart
+          data={{
+            labels: history.map(h => h.date),
+            datasets: [{ data: history.map(h => h.delivery) }]
+          }}
+          width={screenWidth - 40}
+          height={220}
+          chartConfig={chartConfig}
+          bezier
+          style={styles.chart}
+        />
 
-        .footer-btns {
-            position: fixed; bottom: 30px;
-            display: flex; gap: 12px;
-            width: 90%; max-width: 400px;
-            z-index: 1001;
-        }
-        .btn { flex: 1; padding: 20px; border-radius: 40px; border: none; font-weight: 800; font-size: 16px; cursor: pointer; box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
-        .btn-black { background: #1a1c23; color: white; }
-        .btn-gold { background: var(--gold-stitch); color: white; }
+        {/* 4. 히스토리 리스트 */}
+        <Text style={styles.sectionTitle}>납품 기록</Text>
+        {history.map((item, index) => (
+          <View key={index} style={styles.historyCard}>
+            <Text style={styles.dateText}>{item.date}</Text>
+            <View style={styles.historyRow}>
+              <Text style={styles.historyDetail}>납품 {item.delivery}개 | 재료 {item.material}개</Text>
+              <Text style={styles.historyPrice}>₩{item.price.toLocaleString()}</Text>
+            </View>
+          </View>
+        ))}
+      </ScrollView>
 
-        /* 모달 창 */
-        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 2000; }
-        .modal-content { background: white; padding: 30px; border-radius: 30px; width: 85%; max-width: 320px; }
-        input { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #eee; border-radius: 12px; box-sizing: border-box; background: #fcfcfc; font-size: 16px; }
-        label { font-size: 13px; font-weight: bold; color: var(--gold-stitch); margin-left: 5px; }
-    </style>
-</head>
-<body>
+      {/* 입력 버튼 */}
+      <TouchableOpacity style={styles.fab} onPress={() => setModalVisible(true)}>
+        <Plus color="white" size={30} />
+      </TouchableOpacity>
 
-    <div class="header"><h2>옷짓는 고양이</h2></div>
+      {/* 입력 팝업 모달 */}
+      <Modal visible={modalVisible} animationType="slide" transparent={true}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>새 기록 입력</Text>
+            <TextInput style={styles.input} placeholder="날짜 (MM-DD)" placeholderTextColor="#999" />
+            <TextInput style={styles.input} placeholder="납품 수량" keyboardType="numeric" />
+            <TextInput style={styles.input} placeholder="재료 수량" keyboardType="numeric" />
+            <TextInput style={styles.input} placeholder="금액" keyboardType="numeric" />
+            
+            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+              <Text style={styles.saveButtonText}>저장하기</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
-    <div class="summary-card">
-        <div id="displayMonth" class="month-label">2026년 05월</div>
-        <div id="monthlyTotal" class="monthly-total">월 판매: 0원</div>
-        
-        <div class="grand-total-section">
-            <div class="grand-total-title">총금액</div>
-            <div id="grandTotal" class="grand-total-amount">0원</div>
-        </div>
-    </div>
+      {/* 저장 성공 알림 */}
+      {showSuccess && (
+        <View style={styles.successToast}>
+          <CheckCircle2 color="#2D3436" size={24} />
+          <Text style={styles.successText}>기록이 저장되었습니다.</Text>
+        </View>
+      )}
+    </View>
+  );
+}
 
-    <div class="month-filter">
-        <select id="viewMonth" onchange="render()">
-            <option value="2026-04">2026년 4월</option>
-            <option value="2026-05" selected>2026년 5월</option>
-            <option value="2026-06">2026년 6월</option>
-        </select>
-    </div>
+const chartConfig = {
+  backgroundColor: "#ffffff",
+  backgroundGradientFrom: "#ffffff",
+  backgroundGradientTo: "#ffffff",
+  decimalPlaces: 0,
+  color: (opacity = 1) => `rgba(45, 52, 54, ${opacity})`,
+  labelColor: (opacity = 1) => `rgba(99, 110, 114, ${opacity})`,
+  propsForDots: { r: "5", strokeWidth: "2", stroke: "#2D3436" }
+};
 
-    <div class="list-container" id="itemList"></div>
-
-    <div class="footer-btns">
-        <button class="btn btn-black" onclick="openModal()">🧵 수량 기록</button>
-        <button class="btn btn-gold" onclick="alert('정산 기능 준비 중')">💰 정산 기록</button>
-    </div>
-
-    <div class="modal" id="recordModal">
-        <div class="modal-content">
-            <h3 id="modalTitle" style="margin-top:0; text-align:center;">기록 추가</h3>
-            <input type="hidden" id="editId">
-            <label>판매 날짜</label><input type="date" id="pDate">
-            <label>품목명</label><input type="text" id="pName">
-            <label>갯수</label><input type="number" id="pCount">
-            <label>단가 (원)</label><input type="number" id="pPrice">
-            <button class="btn btn-black" style="width:100%; margin-top:15px;" onclick="saveRecord()">기록 저장</button>
-            <button id="delBtn" class="btn" style="width:100%; margin-top:10px; background:#ffebeb; color:#ff4d4d; display:none;" onclick="deleteRecord()">기록 삭제</button>
-            <button class="btn" style="width:100%; margin-top:10px; background:#f5f5f5;" onclick="closeModal()">취소</button>
-        </div>
-    </div>
-
-    <script>
-        let db = JSON.parse(localStorage.getItem('needleCatDB_v4')) || [];
-
-        function openModal(editId = null) {
-            const modal = document.getElementById('recordModal');
-            const delBtn = document.getElementById('delBtn');
-            if (editId) {
-                const item = db.find(i => i.id === editId);
-                document.getElementById('modalTitle').innerText = "기록 수정";
-                document.getElementById('editId').value = editId;
-                document.getElementById('pDate').value = item.date;
-                document.getElementById('pName').value = item.name;
-                document.getElementById('pCount').value = item.count;
-                document.getElementById('pPrice').value = item.price;
-                delBtn.style.display = "block";
-            } else {
-                document.getElementById('modalTitle').innerText = "새 기록 추가";
-                document.getElementById('editId').value = "";
-                document.getElementById('pDate').valueAsDate = new Date();
-                document.getElementById('pName').value = "";
-                document.getElementById('pCount').value = "";
-                document.getElementById('pPrice').value = "";
-                delBtn.style.display = "none";
-            }
-            modal.style.display = 'flex';
-        }
-
-        function closeModal() { document.getElementById('recordModal').style.display = 'none'; }
-
-        function saveRecord() {
-            const id = document.getElementById('editId').value;
-            const data = {
-                date: document.getElementById('pDate').value,
-                month: document.getElementById('pDate').value.substring(0, 7),
-                name: document.getElementById('pName').value,
-                count: parseInt(document.getElementById('pCount').value),
-                price: parseInt(document.getElementById('pPrice').value),
-                id: id ? parseInt(id) : Date.now()
-            };
-            if(!data.name || isNaN(data.count)) return alert("모든 항목을 입력해주세요.");
-            if (id) {
-                const idx = db.findIndex(i => i.id === parseInt(id));
-                db[idx] = data;
-            } else { db.push(data); }
-            localStorage.setItem('needleCatDB_v4', JSON.stringify(db));
-            render(); closeModal();
-        }
-
-        function deleteRecord() {
-            const id = parseInt(document.getElementById('editId').value);
-            if(confirm("이 기록을 삭제할까요?")) {
-                db = db.filter(i => i.id !== id);
-                localStorage.setItem('needleCatDB_v4', JSON.stringify(db));
-                render(); closeModal();
-            }
-        }
-
-        function render() {
-            const targetMonth = document.getElementById('viewMonth').value;
-            document.getElementById('displayMonth').innerText = targetMonth.replace('-', '년 ') + '월';
-            const listEl = document.getElementById('itemList');
-            listEl.innerHTML = '';
-            let mTotal = 0; let gTotal = 0;
-
-            db.forEach(item => {
-                gTotal += (item.price * item.count);
-                if(item.month === targetMonth) {
-                    const sum = item.price * item.count;
-                    mTotal += sum;
-                    listEl.innerHTML += `
-                        <div class="item-card" onclick="openModal(${item.id})">
-                            <div style="flex:1;">
-                                <div style="font-size:11px; color:var(--gold-stitch);">${item.date}</div>
-                                <strong style="font-size:17px;">${item.name}</strong>
-                                <div style="font-size:13px; color:#888;">${item.price.toLocaleString()}원 × ${item.count}개</div>
-                            </div>
-                            <div style="font-weight:bold; font-size:18px;">${sum.toLocaleString()}원</div>
-                        </div>`;
-                }
-            });
-            document.getElementById('monthlyTotal').innerText = `월 판매: ${mTotal.toLocaleString()}원`;
-            document.getElementById('grandTotal').innerText = `${gTotal.toLocaleString()}원`;
-        }
-        render();
-    </script>
-</body>
-</html>
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F8F9FA', paddingHorizontal: 20 },
+  header: { marginTop: 60, marginBottom: 20 },
+  title: { fontSize: 28, fontWeight: '700', color: '#2D3436', letterSpacing: -0.5 },
+  summaryCard: { 
+    backgroundColor: '#FFFFFF', borderRadius: 20, padding: 25, 
+    flexDirection: 'row', justifyContent: 'space-between',
+    shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 2
+  },
+  summaryItem: { flex: 1 },
+  label: { fontSize: 13, color: '#636E72', marginBottom: 8 },
+  value: { fontSize: 18, fontWeight: '700', color: '#2D3436' },
+  unit: { fontSize: 14, fontWeight: '400' },
+  divider: { width: 1, backgroundColor: '#E1E4E8', marginHorizontal: 15 },
+  sectionTitle: { fontSize: 18, fontWeight: '600', color: '#2D3436', marginTop: 30, marginBottom: 15 },
+  chart: { borderRadius: 16, marginVertical: 8 },
+  historyCard: { backgroundColor: '#FFFFFF', borderRadius: 15, padding: 18, marginBottom: 12 },
+  dateText: { fontSize: 12, color: '#B2BEC3', marginBottom: 5 },
+  historyRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  historyDetail: { fontSize: 15, color: '#2D3436' },
+  historyPrice: { fontSize: 16, fontWeight: '600', color: '#2D3436' },
+  fab: { 
+    position: 'absolute', bottom: 40, right: 20, width: 60, height: 60, 
+    borderRadius: 30, backgroundColor: '#2D3436', justifyContent: 'center', alignItems: 'center',
+    shadowColor: "#000", shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.2, shadowRadius: 8
+  },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: 'white', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 30, paddingBottom: 50 },
+  modalTitle: { fontSize: 20, fontWeight: '700', marginBottom: 20 },
+  input: { borderBottomWidth: 1, borderBottomColor: '#E1E4E8', paddingVertical: 12, fontSize: 16, marginBottom: 20 },
+  saveButton: { backgroundColor: '#2D3436', padding: 18, borderRadius: 15, alignItems: 'center' },
+  saveButtonText: { color: 'white', fontSize: 16, fontWeight: '600' },
+  successToast: { 
+    position: 'absolute', top: 60, left: 20, right: 20, backgroundColor: '#FFFFFF', 
+    flexDirection: 'row', padding: 15, borderRadius: 12, alignItems: 'center',
+    shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 10
+  },
+  successText: { marginLeft: 10, fontSize: 15, fontWeight: '500' }
+});
