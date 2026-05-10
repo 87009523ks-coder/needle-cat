@@ -25,7 +25,6 @@
         .btn { background: var(--main-color); color: white; border: none; padding: 16px; border-radius: 12px; width: 100%; font-size: 15px; font-weight: 700; margin-top: 8px; cursor: pointer; }
         
         .history-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #F0F0F0; font-size: 14px; }
-        .history-item:last-child { border-bottom: none; }
     </style>
 </head>
 <body>
@@ -33,13 +32,13 @@
 <div class="header">옷 짓는 고양이</div>
 
 <div class="summary-card">
-    <div class="label">이달의 수량</div>
+    <div class="label">이달의 납품 수량</div>
     <div id="monthQty" class="value">0개</div>
     <div class="label">총 판매액</div>
     <div id="totalPrice" class="value">₩0</div>
     <div class="sub-info">
         <span>월 건수: <b id="monthCount">0</b>건</span>
-        <span>총 납품: <b id="totalQty">0</b></span>
+        <span>총: <b id="totalQty">0개</b></span>
     </div>
 </div>
 
@@ -136,13 +135,13 @@
             }
             historyHtml.push(`
                 <div class="history-item">
-                    <span class="h-date">${data.date} (${data.delivery}개)</span>
-                    <span class="h-amt">₩${data.total.toLocaleString()}</span>
+                    <span>${data.date} (${data.delivery}개)</span>
+                    <span style="font-weight:600">₩${data.total.toLocaleString()}</span>
                 </div>
             `);
         });
 
-        // '0개개' 중복 방지 로직 적용
+        // 단위 중복 방지 및 문구 수정 반영
         document.getElementById('totalQty').innerText = totalQty + '개'; 
         document.getElementById('monthQty').innerText = monthQty + '개';
         document.getElementById('totalPrice').innerText = '₩' + totalPrice.toLocaleString();
