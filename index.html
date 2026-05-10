@@ -23,63 +23,49 @@
         .container { width: 100%; max-width: 500px; }
         .header { text-align: center; margin-bottom: 25px; font-size: 24px; font-weight: 800; color: var(--text-dark); }
 
+        /* 대시보드 */
         .main-card {
             background: linear-gradient(135deg, var(--card-bright), var(--accent-blue));
-            border-radius: 30px;
-            padding: 30px;
-            color: white;
-            position: relative;
-            overflow: hidden;
+            border-radius: 30px; padding: 30px; color: white;
+            position: relative; overflow: hidden;
             box-shadow: 0 10px 25px rgba(56, 189, 248, 0.3);
             margin-bottom: 25px;
         }
-
-        .card-label { font-size: 14px; opacity: 0.9; margin-bottom: 5px; font-weight: 500; }
+        .card-label { font-size: 14px; opacity: 0.9; margin-bottom: 5px; }
         .main-value { font-size: 40px; font-weight: 800; margin-bottom: 20px; }
         .total-sales-value { font-size: 26px; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 15px; margin-bottom: 20px; }
-        .card-footer { display: flex; gap: 20px; font-size: 14px; font-weight: 500; }
+        .card-footer { display: flex; gap: 20px; font-size: 14px; }
+        .circle-deco { position: absolute; right: -20px; bottom: -20px; width: 140px; height: 140px; border: 15px solid rgba(255, 255, 255, 0.15); border-radius: 50%; }
 
-        .circle-deco {
-            position: absolute; right: -20px; bottom: -20px;
-            width: 140px; height: 140px;
-            border: 15px solid rgba(255, 255, 255, 0.15);
-            border-radius: 50%;
-        }
-
+        /* 입력 폼 */
         .input-group {
-            background: white; border-radius: 24px;
-            padding: 22px; margin-bottom: 15px;
+            background: white; border-radius: 24px; padding: 22px; margin-bottom: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
-        .input-group h3 { font-size: 16px; margin: 0 0 15px 0; color: var(--text-dark); }
-        
-        .field-label { font-size: 12px; color: var(--text-gray); margin-bottom: 4px; display: block; padding-left: 4px; }
         input {
             width: 100%; padding: 13px; margin-bottom: 12px;
             border: 1px solid #E2E8F0; border-radius: 12px;
             box-sizing: border-box; font-size: 15px; background-color: #F8FAFC;
         }
-        input[readonly] { background-color: #F1F5F9; color: var(--accent-blue); font-weight: 700; }
-
         .btn-save {
             background: var(--accent-blue); color: white; border: none;
             padding: 16px; border-radius: 12px; width: 100%;
-            font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 5px;
+            font-size: 16px; font-weight: 700; cursor: pointer;
         }
 
         /* 기록 리스트: 넓은 간격의 텍스트 형식 */
+        .history-container { background: white; border-radius: 24px; padding: 10px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .history-item {
-            padding: 16px 8px;
+            padding: 18px 0;
             border-bottom: 1px solid #F1F5F9;
-            font-size: 15px;
-            color: var(--text-dark);
+            font-size: 16px;
             display: flex;
             justify-content: space-between; /* 양 끝 정렬 */
-            align-items: center;
         }
-        .history-date { width: 100px; }
-        .history-qty { flex-grow: 1; text-align: center; color: var(--text-gray); }
-        .history-amount { width: 110px; text-align: right; font-weight: 700; }
+        .history-item:last-child { border-bottom: none; }
+        .h-date { width: 110px; color: var(--text-dark); }
+        .h-qty { flex: 1; text-align: center; color: var(--text-gray); }
+        .h-price { width: 120px; text-align: right; font-weight: 700; color: var(--text-dark); }
     </style>
 </head>
 <body>
@@ -89,7 +75,7 @@
 
         <div class="main-card">
             <div class="circle-deco"></div>
-            <div class="card-label" id="monthLabel">26년 5월 납품 수량</div>
+            <div class="card-label">26년 5월 납품 수량</div>
             <div class="main-value"><span id="monthDelivery">0</span>개</div>
             
             <div class="card-label">총 판매액 (3/10 제외)</div>
@@ -102,24 +88,14 @@
         </div>
 
         <div class="input-group">
-            <h3>데이터 입력</h3>
-            <span class="field-label">날짜</span>
             <input type="date" id="inDate">
-            <span class="field-label">납품 수량</span>
-            <input type="number" id="inDeliv" value="0">
-            <span class="field-label">재료 수량</span>
-            <input type="number" id="inMat" value="0">
-            <span class="field-label">단가 (원)</span>
-            <input type="number" id="inUnitPrice" value="50000">
-            <span class="field-label">총 금액</span>
-            <input type="number" id="inTotalPrice" readonly>
-            
+            <input type="number" id="inDeliv" placeholder="납품 수량">
+            <input type="number" id="inUnitPrice" placeholder="단가" value="50000">
+            <input type="text" id="inTotalPrice" readonly placeholder="총 금액 자동계산">
             <button class="btn-save" onclick="confirmAndSave()">저장하기</button>
         </div>
 
-        <div class="input-group">
-            <div id="historyList"></div>
-        </div>
+        <div class="history-container" id="historyList"></div>
     </div>
 
     <script type="module">
@@ -138,39 +114,31 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // 자동 계산
         const inDeliv = document.getElementById('inDeliv');
         const inUnitPrice = document.getElementById('inUnitPrice');
         const inTotalPrice = document.getElementById('inTotalPrice');
-
-        function updateCalc() {
-            inTotalPrice.value = (Number(inDeliv.value) || 0) * (Number(inUnitPrice.value) || 0);
-        }
-        inDeliv.oninput = updateCalc;
-        inUnitPrice.oninput = updateCalc;
+        function updateCalc() { inTotalPrice.value = (Number(inDeliv.value) || 0) * (Number(inUnitPrice.value) || 0); }
+        inDeliv.oninput = updateCalc; inUnitPrice.oninput = updateCalc;
 
         document.getElementById('inDate').valueAsDate = new Date();
-        updateCalc();
 
+        // 저장 함수
         window.confirmAndSave = async () => {
             if (!confirm("데이터를 저장하시겠습니까?")) return;
-
             const data = {
                 date: document.getElementById('inDate').value,
                 delivery: Number(inDeliv.value),
-                material: Number(document.getElementById('inMat').value),
                 unitPrice: Number(inUnitPrice.value),
-                price: Number(inTotalPrice.value),
+                price: Number(inDeliv.value * inUnitPrice.value),
                 timestamp: new Date()
             };
-
-            try {
-                await addDoc(collection(db, "sales"), data);
-                alert("성공적으로 저장되었습니다.");
-                inDeliv.value = 0; updateCalc();
-            } catch(e) { alert("저장 실패!"); }
+            await addDoc(collection(db, "sales"), data);
+            alert("저장되었습니다.");
+            inDeliv.value = ""; updateCalc();
         };
 
-        // 데이터 복구 및 실시간 리스트 업데이트
+        // 데이터 불러오기 및 실시간 업데이트
         onSnapshot(query(collection(db, "sales"), orderBy("date", "desc")), (snap) => {
             let tD = 0, tP = 0, mD = 0, mC = 0;
             const currM = new Date().toISOString().slice(0, 7);
@@ -180,25 +148,22 @@
             snap.forEach(doc => {
                 const d = doc.data();
                 
-                // [핵심] 3월 10일 데이터만 계산과 목록에서 제외
-                if(d.date === "2026-03-10") return;
+                // [복구 로직] 모든 데이터를 리스트엔 보여주되, 3월 10일만 합계에서 제외
+                let isMarch10 = (d.date === "2026-03-10");
 
-                tD += d.delivery; 
-                tP += d.price;
-                if(d.date && d.date.startsWith(currM)) { 
-                    mD += d.delivery; 
-                    mC++; 
+                if (!isMarch10) {
+                    tD += d.delivery; 
+                    tP += d.price;
+                    if(d.date.startsWith(currM)) { mD += d.delivery; mC++; }
                 }
 
-                // 날짜 포맷 변경 (2026-05-10 -> 2026.05.10)
-                const displayDate = d.date ? d.date.replace(/-/g, '.') : '';
-
-                // 요청하신 간격 넓은 레이아웃 적용
+                // 리스트 출력 (간격 넓게)
+                const dotDate = d.date.replace(/-/g, '.');
                 list.insertAdjacentHTML('beforeend', `
-                    <div class="history-item">
-                        <span class="history-date">${displayDate}</span>
-                        <span class="history-qty">${d.delivery}개</span>
-                        <span class="history-amount">${d.price.toLocaleString()}원</span>
+                    <div class="history-item" style="${isMarch10 ? 'opacity:0.5; background:#fff0f0;' : ''}">
+                        <span class="h-date">${dotDate}</span>
+                        <span class="h-qty">${d.delivery}개</span>
+                        <span class="h-price">${d.price.toLocaleString()}원</span>
                     </div>
                 `);
             });
