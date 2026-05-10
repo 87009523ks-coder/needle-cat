@@ -3,42 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>옷짓는 고양이</title>
+    <title>웃는 고양이</title>
     <style>
         :root { --main-blue: #0284C7; --bg-gray: #F8FAFC; }
         body { font-family: -apple-system, sans-serif; background-color: var(--bg-gray); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         .container { width: 100%; max-width: 500px; }
         .header { text-align: center; margin-bottom: 25px; font-size: 24px; font-weight: 800; color: #0F172A; }
-
-        /* 대시보드 카드 */
         .main-card { background: linear-gradient(135deg, #38BDF8, var(--main-blue)); border-radius: 30px; padding: 30px; color: white; box-shadow: 0 10px 25px rgba(2, 132, 199, 0.2); margin-bottom: 25px; }
         .card-label { font-size: 14px; opacity: 0.9; margin-bottom: 5px; }
         .main-value { font-size: 36px; font-weight: 800; margin-bottom: 20px; }
         .total-price-area { font-size: 24px; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 15px; margin-bottom: 20px; }
         .card-footer { display: flex; gap: 20px; font-size: 14px; }
-
-        /* 입력 폼 */
         .input-group { background: white; border-radius: 24px; padding: 22px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .field-box { margin-bottom: 12px; }
         .field-label { font-size: 12px; color: #64748B; margin-bottom: 4px; display: block; padding-left: 4px; }
         input { width: 100%; padding: 13px; border: 1px solid #E2E8F0; border-radius: 12px; box-sizing: border-box; font-size: 15px; background: #F8FAFC; }
         input[readonly] { background: #F1F5F9; font-weight: 700; color: var(--main-blue); }
         .btn-save { background: var(--main-blue); color: white; border: none; padding: 16px; border-radius: 12px; width: 100%; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 10px; }
-
-        /* 최근 기록 리스트 */
         .history-card { background: white; border-radius: 24px; padding: 10px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .history-item { padding: 18px 0; border-bottom: 1px solid #F1F5F9; display: flex; justify-content: space-between; align-items: center; font-size: 15px; }
-        .history-item:last-child { border-bottom: none; }
-        .h-date { color: #0F172A; font-weight: 500; }
-        .h-qty { color: #64748B; flex: 1; text-align: center; }
-        .h-price { font-weight: 700; color: #0F172A; }
     </style>
 </head>
 <body>
-
     <div class="container">
-        <div class="header">옷짓는 고양이</div>
-
+        <div class="header">웃는 고양이</div>
         <div class="main-card">
             <div class="card-label">이달의 납품 수량</div>
             <div class="main-value"><span id="mQty">0</span>개</div>
@@ -49,129 +37,86 @@
                 <div>누적 납품: <span id="tQty">0</span>개</div>
             </div>
         </div>
-
         <div class="input-group">
-            <div class="field-box">
-                <span class="field-label">날짜</span>
-                <input type="date" id="inDate">
-            </div>
-            <div class="field-box">
-                <span class="field-label">납품 수량 (개)</span>
-                <input type="number" id="inDeliv" placeholder="0">
-            </div>
-            <div class="field-box">
-                <span class="field-label">재료 수량 (개)</span>
-                <input type="number" id="inMat" placeholder="0">
-            </div>
-            <div class="field-box">
-                <span class="field-label">단가 (원)</span>
-                <input type="number" id="inUnit" value="50000">
-            </div>
-            <div class="field-box">
-                <span class="field-label">총 금액 (자동 계산)</span>
-                <input type="text" id="inTotal" readonly value="0원">
-            </div>
-            <button class="btn-save" onclick="handleSave()">데이터 저장하기</button>
+            <div class="field-box"><span class="field-label">날짜</span><input type="date" id="inDate"></div>
+            <div class="field-box"><span class="field-label">납품 수량 (개)</span><input type="number" id="inDeliv" placeholder="0"></div>
+            <div class="field-box"><span class="field-label">재료 수량 (개)</span><input type="number" id="inMat" placeholder="0"></div>
+            <div class="field-box"><span class="field-label">단가 (원)</span><input type="number" id="inUnit" value="50000"></div>
+            <div class="field-box"><span class="field-label">총 금액</span><input type="text" id="inTotal" readonly value="0원"></div>
+            <button class="btn-save" id="saveBtn">데이터 저장하기</button>
         </div>
-
-        <div class="history-card" id="hList">
-            <div style="text-align:center; padding:20px; color:#94A3B8;">기록을 불러오는 중...</div>
-        </div>
+        <div class="history-card" id="hList"></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // 스크린샷 9.22.26의 실제 설정값 반영
+        // 스크린샷의 정보와의 DB 주소 적용
         const firebaseConfig = {
             apiKey: "AIzaSyBdnFr8vjNOfOeovvFm9UmxvkEpvnuAWLY",
             authDomain: "needle-cat.firebaseapp.com",
+            databaseURL: "https://needle-cat-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "needle-cat",
-            storageBucket: "needle-cat.firebasestorage.app",
-            messagingSenderId: "422542027971",
             appId: "1:422542027971:web:37f2298a24b2161209c676"
         };
 
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const colRef = collection(db, "sales"); // 보관함 명칭 고정
+        const db = getDatabase(app);
+        const dbRef = ref(db, 'sales');
 
+        // 자동 계산 로직
         const inDeliv = document.getElementById('inDeliv');
         const inUnit = document.getElementById('inUnit');
         const inTotal = document.getElementById('inTotal');
-
-        const updatePrice = () => { 
-            const total = Number(inDeliv.value || 0) * Number(inUnit.value || 0);
-            inTotal.value = total.toLocaleString() + "원"; 
-        };
-        
-        inDeliv.oninput = updatePrice; 
-        inUnit.oninput = updatePrice;
+        const updatePrice = () => { inTotal.value = (Number(inDeliv.value || 0) * Number(inUnit.value || 0)).toLocaleString() + "원"; };
+        inDeliv.oninput = updatePrice; inUnit.oninput = updatePrice;
         document.getElementById('inDate').valueAsDate = new Date();
 
-        // 저장 함수를 전역으로 노출
-        window.handleSave = async () => {
-            const delivVal = Number(inDeliv.value);
-            if(delivVal === 0 && !confirm("납품 수량이 0입니다. 저장하시겠습니까?")) return;
-
+        // 저장 버튼 클릭 이벤트
+        document.getElementById('saveBtn').onclick = async () => {
+            const data = {
+                date: document.getElementById('inDate').value,
+                delivery: Number(inDeliv.value || 0),
+                material: Number(document.getElementById('inMat').value || 0),
+                unitPrice: Number(inUnit.value),
+                price: Number(inDeliv.value || 0) * Number(inUnit.value)
+            };
             try {
-                await addDoc(colRef, {
-                    date: document.getElementById('inDate').value,
-                    delivery: delivVal,
-                    material: Number(document.getElementById('inMat').value || 0),
-                    unitPrice: Number(inUnit.value),
-                    price: delivVal * Number(inUnit.value),
-                    timestamp: new Date()
-                });
-                alert("성공적으로 저장되었습니다!");
-                inDeliv.value = ""; 
-                document.getElementById('inMat').value = ""; 
-                updatePrice();
-            } catch (e) {
-                console.error(e);
-                alert("저장 실패: Firebase 연결을 확인하세요.");
-            }
+                await push(dbRef, data);
+                alert("저장 성공!");
+                inDeliv.value = ""; updatePrice();
+            } catch (e) { alert("오류 발생: " + e.message); }
         };
 
-        // 데이터 실시간 감시 (새로고침 시 자동 로드)
-        onSnapshot(query(colRef, orderBy("date", "desc")), (snap) => {
-            let totalQty = 0, totalPrice = 0, monthQty = 0, monthCount = 0;
-            const currentMonth = new Date().toISOString().slice(0, 7);
+        // 실시간 데이터 로드 (새로고침 시 자동 실행)
+        onValue(dbRef, (snapshot) => {
             const listArea = document.getElementById('hList');
-            
-            if (snap.empty) {
-                listArea.innerHTML = '<div style="text-align:center; padding:20px; color:#94A3B8;">저장된 기록이 없습니다.</div>';
-            } else {
-                listArea.innerHTML = "";
-            }
+            listArea.innerHTML = "";
+            let tQ = 0, tP = 0, mQ = 0, mC = 0;
+            const currentMonth = new Date().toISOString().slice(0, 7);
 
-            snap.forEach(doc => {
-                const d = doc.data();
-                // 3월 10일 데이터 제외 로직 유지
-                if(d.date !== "2026-03-10") {
-                    totalQty += (d.delivery || 0);
-                    totalPrice += (d.price || 0);
-                    if(d.date.startsWith(currentMonth)) { 
-                        monthQty += (d.delivery || 0); 
-                        monthCount++; 
+            const data = snapshot.val();
+            if (data) {
+                // 내림차순 정렬을 위해 배열로 변환
+                Object.values(data).reverse().forEach(d => {
+                    if(d.date !== "2026-03-10") {
+                        tQ += d.delivery; tP += d.price;
+                        if(d.date.startsWith(currentMonth)) { mQ += d.delivery; mC++; }
                     }
-                }
-
-                const displayDate = d.date.replace(/-/g, '.');
-                listArea.insertAdjacentHTML('beforeend', `
-                    <div class="history-item">
-                        <span class="h-date">${displayDate}</span>
-                        <span class="h-qty">${d.delivery}개</span>
-                        <span class="h-price">${(d.price || 0).toLocaleString()}원</span>
-                    </div>
-                `);
-            });
-
-            document.getElementById('tQty').innerText = totalQty.toLocaleString();
-            document.getElementById('tPrice').innerText = totalPrice.toLocaleString();
-            document.getElementById('mQty').innerText = monthQty.toLocaleString();
-            document.getElementById('mCount').innerText = monthCount.toLocaleString();
+                    listArea.insertAdjacentHTML('beforeend', `
+                        <div class="history-item">
+                            <span>${d.date}</span>
+                            <span>${d.delivery}개</span>
+                            <span style="font-weight:700">${d.price.toLocaleString()}원</span>
+                        </div>
+                    `);
+                });
+            }
+            document.getElementById('tQty').innerText = tQ.toLocaleString();
+            document.getElementById('tPrice').innerText = tP.toLocaleString();
+            document.getElementById('mQty').innerText = mQ.toLocaleString();
+            document.getElementById('mCount').innerText = mC.toLocaleString();
         });
     </script>
 </body>
