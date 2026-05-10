@@ -6,7 +6,7 @@
     <title>옷 짓는 고양이</title>
     <style>
         :root { --main-color: #2196F3; --bg-color: #F5F7FA; --red-color: #F44336; }
-        body { font-family: -apple-system, sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; color: #333; }
+        body { font-family: -apple-system, sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; color: #333; line-height: 1.5; }
         .header { margin: 20px 0; font-size: 24px; font-weight: 800; text-align: center; color: #1A237E; }
         .summary-card { background: linear-gradient(135deg, #2196F3, #1976D2); border-radius: 24px; padding: 25px; color: white; box-shadow: 0 8px 16px rgba(33,150,243,0.2); margin-bottom: 20px; }
         .label { font-size: 13px; opacity: 0.9; margin-bottom: 5px; }
@@ -16,10 +16,12 @@
         h3 { font-size: 16px; margin: 0 0 15px 0; color: #444; }
         .input-group { margin-bottom: 12px; }
         .input-group label { display: block; font-size: 11px; color: #888; margin-bottom: 4px; padding-left: 2px; }
-        input { width: 100%; padding: 12px; border: 1px solid #E0E0E0; border-radius: 10px; box-sizing: border-box; background: #FAFAFA; font-size: 15px; outline: none; }
+        input { width: 100%; padding: 12px; border: 1px solid #E0E0E0; border-radius: 10px; box-sizing: border-box; background: #FAFAFA; font-size: 15px; outline: none; transition: 0.2s; }
+        input:focus { border-color: var(--main-color); background: #fff; }
         input[readonly] { background: #F0F4F8; color: var(--main-color); font-weight: 600; border: 1px dashed #BDC3C7; }
         .btn { background: var(--main-color); color: white; border: none; padding: 16px; border-radius: 12px; width: 100%; font-size: 15px; font-weight: 700; margin-top: 8px; cursor: pointer; }
         .history-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #F0F0F0; font-size: 14px; }
+        .history-item:last-child { border-bottom: none; }
         .del-btn { background: none; border: 1px solid #ff000033; color: var(--red-color); padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; }
     </style>
 </head>
@@ -50,7 +52,9 @@
 
 <div class="card">
     <h3>최근 기록</h3>
-    <div id="historyList"></div>
+    <div id="historyList">
+        <p style="text-align:center; color:#999; font-size:12px;">데이터를 불러오는 중입니다...</p>
+    </div>
 </div>
 
 <script type="module">
@@ -60,7 +64,7 @@
     const firebaseConfig = {
         apiKey: "AIzaSyBdnFr8vjNOFeovvFm9Umxv kEpvnuAWLY",
         authDomain: "needle-cat.firebaseapp.com",
-        databaseURL: "https://needle-cat-default-rtdb.firebaseio.com", // 실시간 데이터베이스 주소
+        databaseURL: "https://needle-cat-default-rtdb.firebaseio.com",
         projectId: "needle-cat",
         storageBucket: "needle-cat.appspot.com",
         messagingSenderId: "422542027971",
@@ -92,7 +96,7 @@
             document.getElementById('inputDelivery').value = '';
             document.getElementById('inputMaterial').value = '';
             calculateTotal();
-        } catch (e) { alert('저장 실패: ' + e.message); }
+        } catch (e) { alert('저장 실패!'); }
     };
 
     window.deleteItem = async (id) => {
@@ -103,37 +107,41 @@
         }
     };
 
-    // 실시간 데이터 수신 및 UI 업데이트
+    // 데이터 읽기 경로를 'delivery'로 확실히 지정
     onValue(ref(db, 'delivery'), (snapshot) => {
+        const data = snapshot.val();
         let totalQty = 0, totalPrice = 0, monthQty = 0, monthCount = 0;
         const historyHtml = [];
         const currentMonth = new Date().toISOString().substring(0, 7);
-        const data = snapshot.val();
 
         if (data) {
-            // 데이터를 날짜 역순으로 정렬하기 위해 배열로 변환
             const items = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+            // 날짜 내림차순 정렬
             items.sort((a, b) => b.date.localeCompare(a.date));
 
             items.forEach((item) => {
-                totalQty += item.delivery;
-                totalPrice += item.total;
-                if(item.date.startsWith(currentMonth)) { monthQty += item.delivery; monthCount++; }
-                
+                totalQty += (item.delivery || 0);
+                totalPrice += (item.total || 0);
+                if(item.date && item.date.startsWith(currentMonth)) {
+                    monthQty += (item.delivery || 0);
+                    monthCount++;
+                }
                 historyHtml.push(`
                     <div class="history-item">
-                        <span>${item.date} (${item.delivery}개) <b>₩${item.total.toLocaleString()}</b></span>
+                        <span>${item.date} (${item.delivery}개) <b>₩${(item.total || 0).toLocaleString()}</b></span>
                         <button class="del-btn" onclick="deleteItem('${item.id}')">삭제</button>
                     </div>
                 `);
             });
+            document.getElementById('historyList').innerHTML = historyHtml.join('');
+        } else {
+            document.getElementById('historyList').innerHTML = '<p style="text-align:center; color:#999; font-size:12px;">기록이 없습니다.</p>';
         }
 
         document.getElementById('totalQty').innerText = totalQty + '개'; 
         document.getElementById('monthQty').innerText = monthQty + '개';
         document.getElementById('totalPrice').innerText = '₩' + totalPrice.toLocaleString();
         document.getElementById('monthCount').innerText = monthCount;
-        document.getElementById('historyList').innerHTML = historyHtml.join('');
     });
 
     document.getElementById('inputDate').value = new Date().toISOString().substring(0, 10);
