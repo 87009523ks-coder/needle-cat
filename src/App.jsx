@@ -42,12 +42,13 @@ const App = () => {
     return delivery * price;
   };
 
+  // 1. 당월 합계 계산 로직 (에러 수정: 정확한 연도와 월 비교)
   const thisMonthTotal = records
     .filter(r => {
       const rDate = new Date(r.date);
       return rDate.getFullYear() === currentYear && (rDate.getMonth() + 1) === currentMonth;
     })
-    .reduce((sum, r) => sum + (r.totalPrice || 0), 0);
+    .reduce((sum, r) => sum + (Number(r.totalPrice) || 0), 0);
 
   const filteredRecords = records.filter(r => new Date(r.date).getFullYear().toString() === selectedYear);
 
@@ -59,7 +60,7 @@ const App = () => {
         deliveryCount: parseInt(deliveryCount) || 0,
         materialCount: parseInt(materialCount) || 0,
         unitPrice: parseInt(unitPrice.replace(/,/g, "")) || 0,
-        totalPrice: calculateTotal(),
+        totalPrice: calculateTotal(), // 합계 계산 저장
         timestamp: Date.now(),
       });
       alert("저장되었습니다.");
@@ -72,42 +73,52 @@ const App = () => {
   return (
     <div style={{ padding: '20px', maxWidth: '500px', margin: '0 auto', fontFamily: 'sans-serif', color: '#000' }}>
       
-      {/* 타이틀: 중앙 정렬 */}
       <h1 style={{ fontSize: '32px', fontWeight: '900', textAlign: 'center', marginBottom: '5px', letterSpacing: '-1.5px' }}>옷짓는 고양이</h1>
       
-      {/* 오늘 날짜: 우측 정렬 (그레이) */}
-      <div style={{ textAlign: 'right', fontSize: '13px', color: '#888', marginBottom: '25px' }}>{todayString}</div>
+      {/* 2. 오늘 날짜: 폰트 크기 120% 확대 (13px -> 16px 정도) */}
+      <div style={{ textAlign: 'right', fontSize: '16px', color: '#888', marginBottom: '25px', fontWeight: '500' }}>{todayString}</div>
       
-      {/* 대시보드: 배경색 추가 및 구조 변경 */}
+      {/* 3. 대시보드: 정렬 수정 */}
       <div style={{ 
-        backgroundColor: '#f8f9fa', // 연한 그레이 배경색
+        backgroundColor: '#f8f9fa', 
         border: '2px solid #000', 
         borderRadius: '24px', 
-        padding: '30px 20px', 
-        textAlign: 'center', 
+        padding: '30px 25px', 
         marginBottom: '35px' 
       }}>
-        <div style={{ fontSize: '15px', color: '#666', marginBottom: '8px' }}>
-          {currentMonth}월 납품 {thisMonthTotal.toLocaleString()}원
-        </div>
-        <div style={{ fontSize: '42px', fontWeight: '900' }}>
-          {thisMonthTotal.toLocaleString()}원
+        {/* 상단 소제목을 왼쪽으로 이동하고 하단 금액의 첫 숫자와 맞춤 */}
+        <div style={{ textAlign: 'left', maxWidth: 'fit-content', margin: '0 auto' }}>
+          <div style={{ fontSize: '15px', color: '#666', marginBottom: '5px', paddingLeft: '2px' }}>
+            {currentMonth}월 {thisMonthTotal.toLocaleString()}원
+          </div>
+          <div style={{ fontSize: '42px', fontWeight: '900', lineHeight: '1' }}>
+            {thisMonthTotal.toLocaleString()}원
+          </div>
         </div>
       </div>
 
-      {/* 연도 선택 탭 */}
-      <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+      {/* 4. 연도 선택 탭: 화살표 중복 문제 해결 (appearance: none 추가) */}
+      <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '2px' }}>
         <select 
           value={selectedYear} 
           onChange={(e) => setSelectedYear(e.target.value)}
-          style={{ border: 'none', fontSize: '20px', fontWeight: 'bold', background: 'none', cursor: 'pointer', outline: 'none' }}
+          style={{ 
+            border: 'none', 
+            fontSize: '20px', 
+            fontWeight: 'bold', 
+            background: 'none', 
+            cursor: 'pointer', 
+            outline: 'none',
+            WebkitAppearance: 'none', // 브라우저 기본 화살표 숨기기
+            MozAppearance: 'none',
+            appearance: 'none'
+          }}
         >
           {years.map(y => <option key={y} value={y}>{y}년</option>)}
         </select>
-        <ChevronDown size={20} />
+        <ChevronDown size={20} strokeWidth={3} />
       </div>
 
-      {/* 히스토리 리스트 */}
       <div style={{ borderTop: '2px solid #000', marginBottom: '100px' }}>
         {filteredRecords.length === 0 ? (
           <div style={{ padding: '40px 0', textAlign: 'center', color: '#aaa' }}>기록이 없습니다.</div>
@@ -124,12 +135,10 @@ const App = () => {
         )}
       </div>
 
-      {/* 플로팅 버튼 */}
       <button onClick={() => setShowModal(true)} style={{ position: 'fixed', bottom: '40px', right: '30px', width: '65px', height: '65px', borderRadius: '50%', backgroundColor: '#000', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}>
         <Plus size={35} />
       </button>
 
-      {/* 입력 모달 */}
       {showModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
           <div style={{ backgroundColor: '#fff', padding: '30px', borderRadius: '25px', width: '90%', maxWidth: '420px', boxSizing: 'border-box' }}>
