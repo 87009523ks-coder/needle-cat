@@ -7,19 +7,17 @@ const App = () => {
   const [showModal, setShowModal] = useState(false);
   const [records, setRecords] = useState([]);
   
-  // 현재 날짜 관련
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
+  const todayString = now.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
 
-  // 상태 관리
   const [selectedYear, setSelectedYear] = useState(currentYear.toString());
   const [date, setDate] = useState(now.toISOString().split('T')[0]);
   const [deliveryCount, setDeliveryCount] = useState(""); 
   const [materialCount, setMaterialCount] = useState(""); 
   const [unitPrice, setUnitPrice] = useState("50,000"); 
 
-  // 연도 드롭다운 목록 자동 생성 (2024년부터 올해 + 5년까지)
   const years = [];
   for (let y = 2024; y <= currentYear + 5; y++) {
     years.push(y.toString());
@@ -38,19 +36,12 @@ const App = () => {
     return () => unsubscribe();
   }, []);
 
-  // 숫자 포맷
-  const formatComma = (val) => {
-    const num = val.toString().replace(/[^0-9]/g, "");
-    return num ? Number(num).toLocaleString() : "";
-  };
-
   const calculateTotal = () => {
     const delivery = parseInt(deliveryCount) || 0;
     const price = parseInt(unitPrice.replace(/,/g, "")) || 0;
     return delivery * price;
   };
 
-  // 이번 달 합계 계산 (현재 선택된 연도와 상관없이 실제 이번 달 데이터)
   const thisMonthTotal = records
     .filter(r => {
       const rDate = new Date(r.date);
@@ -58,7 +49,6 @@ const App = () => {
     })
     .reduce((sum, r) => sum + (r.totalPrice || 0), 0);
 
-  // 선택된 연도의 기록만 필터링
   const filteredRecords = records.filter(r => new Date(r.date).getFullYear().toString() === selectedYear);
 
   const handleSave = async () => {
@@ -81,29 +71,43 @@ const App = () => {
 
   return (
     <div style={{ padding: '20px', maxWidth: '500px', margin: '0 auto', fontFamily: 'sans-serif', color: '#000' }}>
-      <h1 style={{ fontSize: '32px', fontWeight: '900', marginBottom: '25px', letterSpacing: '-1.5px' }}>옷짓는 고양이</h1>
       
-      {/* 대시보드: 왼쪽 정렬 및 이번달 합계 */}
-      <div style={{ border: '3px solid #000', borderRadius: '24px', padding: '30px 25px', marginBottom: '35px' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
-          <span style={{ fontSize: '18px', fontWeight: 'bold' }}>{currentMonth}월</span>
-          <span style={{ fontSize: '32px', fontWeight: '900' }}>{thisMonthTotal.toLocaleString()}원</span>
+      {/* 타이틀: 중앙 정렬 */}
+      <h1 style={{ fontSize: '32px', fontWeight: '900', textAlign: 'center', marginBottom: '5px', letterSpacing: '-1.5px' }}>옷짓는 고양이</h1>
+      
+      {/* 오늘 날짜: 우측 정렬 (그레이) */}
+      <div style={{ textAlign: 'right', fontSize: '13px', color: '#888', marginBottom: '25px' }}>{todayString}</div>
+      
+      {/* 대시보드: 배경색 추가 및 구조 변경 */}
+      <div style={{ 
+        backgroundColor: '#f8f9fa', // 연한 그레이 배경색
+        border: '2px solid #000', 
+        borderRadius: '24px', 
+        padding: '30px 20px', 
+        textAlign: 'center', 
+        marginBottom: '35px' 
+      }}>
+        <div style={{ fontSize: '15px', color: '#666', marginBottom: '8px' }}>
+          {currentMonth}월 납품 {thisMonthTotal.toLocaleString()}원
+        </div>
+        <div style={{ fontSize: '42px', fontWeight: '900' }}>
+          {thisMonthTotal.toLocaleString()}원
         </div>
       </div>
 
-      {/* 연도 선택 탭 (드롭다운) */}
-      <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+      {/* 연도 선택 탭 */}
+      <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '5px' }}>
         <select 
           value={selectedYear} 
           onChange={(e) => setSelectedYear(e.target.value)}
-          style={{ border: 'none', fontSize: '20px', fontWeight: 'bold', background: 'none', cursor: 'pointer', outline: 'none', appearance: 'none' }}
+          style={{ border: 'none', fontSize: '20px', fontWeight: 'bold', background: 'none', cursor: 'pointer', outline: 'none' }}
         >
           {years.map(y => <option key={y} value={y}>{y}년</option>)}
         </select>
         <ChevronDown size={20} />
       </div>
 
-      {/* 히스토리 리스트: 한 줄 정리 */}
+      {/* 히스토리 리스트 */}
       <div style={{ borderTop: '2px solid #000', marginBottom: '100px' }}>
         {filteredRecords.length === 0 ? (
           <div style={{ padding: '40px 0', textAlign: 'center', color: '#aaa' }}>기록이 없습니다.</div>
