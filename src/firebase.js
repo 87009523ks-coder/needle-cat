@@ -6,7 +6,7 @@ import { getDatabase } from "firebase/database";
 const firebaseConfig = {
   apiKey: "본인의_API_KEY",
   authDomain: "needle-cat.firebaseapp.com",
-  databaseURL: "https://needle-cat-default-rtdb.firebaseio.com", // 리얼타임 데이터베이스 주소
+  databaseURL: "https://needle-cat-default-rtdb.asia-southeast1.firebasedatabase.app", // 리얼타임 데이터베이스 주소
   projectId: "needle-cat",
   storageBucket: "needle-cat.appspot.com",
   messagingSenderId: "본인의_ID",
